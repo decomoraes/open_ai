@@ -7,10 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::env;
 use std::rc::Rc;
-use std::str::FromStr;
 use std::time::Duration;
-use reqwest::{Method, RequestBuilder};
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 use crate::resources::completions::Completions;
 use std::collections::HashSet;
@@ -133,21 +130,21 @@ impl<'a> OpenAI<'a> {
         OpenAI::new(ClientOptions::new())
     }
 
-    fn default_headers(&self) -> HashMap<String, String> {
-        let mut headers = HashMap::new();
-        if let Some(ref org) = self.organization {
-            headers.insert("OpenAI-Organization".to_string(), org.clone());
-        }
-        if let Some(ref proj) = self.project {
-            headers.insert("OpenAI-Project".to_string(), proj.clone());
-        }
-        if let Some(ref default_headers) = self.options.default_headers {
-            for (key, value) in default_headers {
-                headers.insert(key.clone(), value.clone());
-            }
-        }
-        headers
-    }
+    // fn default_headers(&self) -> HashMap<String, String> {
+    //     let mut headers = HashMap::new();
+    //     if let Some(ref org) = self.organization {
+    //         headers.insert("OpenAI-Organization".to_string(), org.clone());
+    //     }
+    //     if let Some(ref proj) = self.project {
+    //         headers.insert("OpenAI-Project".to_string(), proj.clone());
+    //     }
+    //     if let Some(ref default_headers) = self.options.default_headers {
+    //         for (key, value) in default_headers {
+    //             headers.insert(key.clone(), value.clone());
+    //         }
+    //     }
+    //     headers
+    // }
 
     fn auth_headers(&self) -> Headers {
         let mut headers = HashMap::new();
@@ -282,14 +279,14 @@ lazy_static! {
 mod tests {
     use std::error::Error;
     use serde_json::json;
-    use crate::resources::completions::{CompletionCreate, CompletionCreateParams};
+    use crate::resources::completions::CompletionCreateParams;
     use super::*;
 
     #[tokio::test]
     async fn test_completions() -> Result<(), Box<dyn Error>> {
 
         let openai = OpenAI::default()?;
-        
+
         let completion = openai.completions.create(CompletionCreateParams {
             model: "gpt-3.5-turbo-instruct".to_string(),
             prompt: Some(json!("Write a tagline for an ice cream shop.")),
@@ -298,7 +295,7 @@ mod tests {
 
         assert!(completion.is_ok());
         println!("{:?}", completion.unwrap().choices.first().unwrap().text);
-        
+
         Ok(())
     }
 }
