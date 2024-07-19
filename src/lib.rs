@@ -2,7 +2,9 @@ pub mod resources;
 mod resource;
 mod core;
 mod openai_error;
+mod shared;
 
+use resources::chat;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::env;
@@ -13,6 +15,7 @@ use crate::resources::completions::Completions;
 use std::collections::HashSet;
 use lazy_static::lazy_static;
 use crate::core::{APIClient, Headers};
+use crate::resources::chat::Chat;
 
 #[derive(Debug, Clone)]
 pub struct ClientOptions {
@@ -91,6 +94,7 @@ pub struct OpenAI<'a> {
     pub options: ClientOptions,
     pub client: APIClient,
     pub completions: Completions<'a>,
+    pub chat: Chat<'a>,
 }
 
 impl<'a> OpenAI<'a> {
@@ -118,10 +122,12 @@ impl<'a> OpenAI<'a> {
             options: opts,
             client,
             completions: Completions::new(),
+            chat: Chat::new(),
         };
 
         openai.client.additional_auth_headers = Some(openai.auth_headers());
         openai.completions.openai = Some(Rc::new(RefCell::new(openai.clone())));
+        openai.chat.set_openai(Rc::new(RefCell::new(openai.clone())));
 
         Ok(openai)
     }
@@ -260,6 +266,16 @@ pub struct Property {
     pub description: Option<String>,
 }
 
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OpenAIObject {
+    #[default]
+    #[serde(rename = "chat.completion")]
+    ChatCompletion,
+    TextCompletion,
+}
+
 lazy_static! {
     static ref DEPLOYMENTS_ENDPOINTS: HashSet<&'static str> = {
         let mut m = HashSet::new();
@@ -279,8 +295,11 @@ lazy_static! {
 mod tests {
     use std::error::Error;
     use serde_json::json;
+    use crate::OpenAI;
+    use crate::resources::chat::{ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam};
+    use crate::resources::chat::ChatContentPart::String;
+    use crate::resources::chat::ChatModel::Gpt4o;
     use crate::resources::completions::CompletionCreateParams;
-    use super::*;
 
     #[tokio::test]
     async fn test_completions() -> Result<(), Box<dyn Error>> {
@@ -295,6 +314,42 @@ mod tests {
 
         assert!(completion.is_ok());
         println!("{:?}", completion.unwrap().choices.first().unwrap().text);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_chat_completions() -> Result<(), Box<dyn Error>> {
+
+        let openai = OpenAI::default()?;
+
+        let completion = openai.chat.completions.create(ChatCompletionCreateParams {
+            model: Gpt4o.into(),
+            messages: vec![
+                ChatCompletionMessageParam::System(ChatCompletionSystemParam {
+                    content: "You are a helpful assistant.".to_string(),
+                    name: None,
+                }),
+                ChatCompletionMessageParam::User(ChatCompletionUserParam {
+                    content: String("What is the capital of the United States?".to_string()),
+                    name: None,
+                }),
+            ],
+            ..Default::default()
+        }).await;
+
+        match &completion {
+            Ok(response) => {
+                println!("success: {:?}", response.choices.first().unwrap().message);
+            },
+            Err(e) => {
+                let error = e.to_string();
+                println!("error: {:?}", error);
+            }
+        }
+
+        assert!(completion.is_ok());
+        println!("{:?}", completion.unwrap().choices.first().unwrap().message);
 
         Ok(())
     }
@@ -328,3 +383,22 @@ mod tests {
 // openai.request(options)
 // openai.requestAPIList(Page, options)
 // openai.timeout
+
+
+// "ERROR 404 Not Found, Request failed: Ok("{\n    \"error\": {\n        \"message\": \"The model `gpt-4.0` does not exist or you do not have access to it.\",\n        \"type\": \"invalid_request_error\",\n        \"param\": null,\n        \"code\": \"model_not_found\"\n    }\n}\n")"
+
+
+//  {
+//      "messages": [ 
+//          {
+//              "role": "system",
+//              "content": "You are a helpful assistant."
+//          },
+//          {
+//              "role": "user",
+//              "content":"What is the capital of the United States?"//          }
+//      ],
+//      "model":"gpt-4o"
+//  }
+
+// {"messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"What is the capital of the United States?"}],"model":"gpt-4o"}

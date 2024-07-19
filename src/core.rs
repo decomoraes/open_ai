@@ -196,13 +196,6 @@ pub enum FinishReason {
     ContentFilter,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CompletionUsage {
-    pub prompt_tokens: u32,
-    pub completion_tokens: u32,
-    pub total_tokens: u32,
-}
-
 // #[tokio::main]
 // async fn main() -> Result<(), Box<dyn Error>> {
 //     let api_key = "your_openai_api_key_here".to_string();

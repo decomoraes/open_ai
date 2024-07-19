@@ -4,26 +4,21 @@ use std::error::Error;
 use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use crate::core::RequestOptions;
-use crate::OpenAI;
+use crate::{OpenAI, OpenAIObject};
 
 #[derive(Debug, Clone)]
 pub struct Completions<'a> {
-    // pub openai: Option<& 'a OpenAI<'a>>,
     pub openai: Option<Rc<RefCell<OpenAI<'a>>>>,
 }
 
 impl<'a> Completions<'a> {
-    // pub fn new(openai: & 'a OpenAI) -> Self {
-    //     Completions {
-    //         openai,
-    //     }
-    // }
     pub fn new() -> Self {
         Completions {
             openai: None,
         }
     }
 
+    /// Creates a completion for the provided prompt and parameters.
     pub async fn create(&self, body: CompletionCreateParams) -> Result<Completion, Box<dyn Error>> {
         let stream = body.stream.unwrap_or(false);
         self.openai.as_ref().unwrap().borrow().client.post(
@@ -54,7 +49,7 @@ pub struct Completion {
     pub model: String,
 
     /// The object type, which is always "text_completion".
-    pub object: String,
+    pub object: OpenAIObject,
 
     /// This fingerprint represents the backend configuration that the model runs with.
     ///
