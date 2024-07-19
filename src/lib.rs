@@ -298,7 +298,7 @@ mod tests {
     use crate::OpenAI;
     use crate::resources::chat::{ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam};
     use crate::resources::chat::ChatContentPart::String;
-    use crate::resources::chat::ChatModel::Gpt4o;
+    use crate::resources::chat::ChatModel;
     use crate::resources::completions::CompletionCreateParams;
 
     #[tokio::test]
@@ -324,7 +324,7 @@ mod tests {
         let openai = OpenAI::default()?;
 
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-            model: Gpt4o.into(),
+            model: ChatModel::Gpt4o.into(),
             messages: vec![
                 ChatCompletionMessageParam::System(ChatCompletionSystemParam {
                     content: "You are a helpful assistant.".to_string(),
