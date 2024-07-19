@@ -1,28 +1,45 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
+use std::rc::Rc;
 use serde::{Deserialize, Serialize};
+use crate::core::RequestOptions;
 use crate::OpenAI;
 
 #[derive(Debug, Clone)]
 pub struct Completions<'a> {
-    openai: & 'a OpenAI,
+    // pub openai: Option<& 'a OpenAI<'a>>,
+    pub openai: Option<Rc<RefCell<OpenAI<'a>>>>,
 }
 
 impl<'a> Completions<'a> {
-    pub fn new(openai: & 'a OpenAI) -> Self {
+    // pub fn new(openai: & 'a OpenAI) -> Self {
+    //     Completions {
+    //         openai,
+    //     }
+    // }
+    pub fn new() -> Self {
         Completions {
-            openai,
+            openai: None,
         }
     }
 
-    pub async fn create(&self, body: CompletionCreate) -> Result<Completion, Box<dyn Error>> {
-        self.openai.client.post("/completions", Some(body)).await
+    pub async fn create(&self, body: CompletionCreateParams) -> Result<Completion, Box<dyn Error>> {
+        let stream = body.stream.unwrap_or(false);
+        self.openai.as_ref().unwrap().borrow().client.post(
+            "/completions",
+            Some( RequestOptions {
+                body: Some(body),
+                stream: Some(stream),
+                ..Default::default()
+            })
+        ).await
     }
 }
 
 /// Represents a completion response from the API. Note: both the streamed and
 /// non-streamed response objects share the same shape (unlike the chat endpoint).
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Deserialize, Serialize)]
 pub struct Completion {
     /// A unique identifier for the completion.
     pub id: String,
@@ -49,16 +66,17 @@ pub struct Completion {
     pub usage: Option<CompletionUsage>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FinishReason {
+    #[default]
     Stop,
     Length,
     ContentFilter,
 }
 
 /// Represents a completion choice.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Deserialize, Serialize)]
 pub struct CompletionChoice {
     /// The reason the model stopped generating tokens. This will be `stop` if the model
     /// hit a natural stop point or a provided stop sequence, `length` if the maximum
@@ -99,6 +117,12 @@ pub enum CompletionCreate {
     Streaming(CompletionCreateParams),
 }
 
+impl Default for CompletionCreate {
+    fn default() -> Self {
+        CompletionCreate::NonStreaming(CompletionCreateParams::default())
+    }
+}
+
 #[derive(Default, Debug, Deserialize, Serialize)]
 pub struct CompletionCreateParams {
     /// ID of the model to use. You can use the
@@ -125,6 +149,7 @@ pub struct CompletionCreateParams {
     /// **Note:** Because this parameter generates many completions, it can quickly
     /// consume your token quota. Use carefully and ensure that you have reasonable
     /// settings for `max_tokens` and `stop`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub best_of: Option<u32>,
 
     /// Echo back the prompt in addition to the completion.
@@ -147,6 +172,7 @@ pub struct CompletionCreateParams {
     ///
     /// As an example, you can pass `{"50256": -100}` to prevent the <|endoftext|> token
     /// from being generated.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub logit_bias: Option<HashMap<String, f32>>,
 
     /// Include the log probabilities on the `logprobs` most likely output tokens, as
@@ -225,6 +251,7 @@ pub struct CompletionCreateParams {
     /// A unique identifier representing your end-user, which can help OpenAI to monitor
     /// and detect abuse.
     /// [Learn more](https://platform.openai.com/docs/guides/safety-best-practices/end-user-ids).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
 }
 
@@ -255,11 +282,6 @@ pub struct CompletionCreateParams {
 //     /// [Example Python code](https://cookbook.openai.com/examples/how_to_stream_completions).
 //     pub stream: bool,
 // }
-
-#[derive(Debug, Clone)]
-pub struct RequestOptions {
-    pub api_key: String,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct StreamOptions {

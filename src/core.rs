@@ -3,10 +3,10 @@ use reqwest::{Client, Method, Request, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use serde_json::Value;
 use tokio::time::sleep;
-use uuid::Uuid;
-use crate::resources::completions::CompletionCreate;
 
 pub type APIPromise<T> = tokio::task::JoinHandle<Result<T, Box<dyn Error>>>;
 
@@ -16,6 +16,7 @@ pub struct APIClient {
     max_retries: u32,
     timeout: Duration,
     client: Client,
+    pub additional_auth_headers: Option<Headers>,
 }
 
 impl APIClient {
@@ -25,21 +26,61 @@ impl APIClient {
             max_retries,
             timeout,
             client,
+            additional_auth_headers: None,
         }
     }
 
-    pub async fn get<Req: Serialize, Rsp: for<'de> Deserialize<'de>>(
-        &self,
-        path: &str,
-        opts: Option<Req>,
-    ) -> Result<Rsp, Box<dyn Error>> {
-        self.method_request(Method::POST, path, opts).await
+    pub fn auth_headers<Req: Serialize>(&self, opts: &RequestOptions<Req>) -> Headers {
+        let mut headers: Headers = HashMap::new();
+
+        if let Some(self_headers) = &self.additional_auth_headers {
+            for (key, value) in self_headers {
+                if let Some(value) = value {
+                    headers.insert(key.clone(), Some(value.clone()));
+                }
+            }
+        }
+
+        if let Some(request_headers) = &opts.headers {
+            for (key, value) in request_headers {
+                if let Some(value) = value {
+                    headers.insert(key.clone(), Some(value.clone()));
+                }
+            }
+        }
+
+        headers
+    }
+
+    pub fn default_headers<Req: Serialize>(&self, opts: &RequestOptions<Req>) -> Headers {
+        // return {
+        //     Accept: 'application/json',
+        //     'Content-Type': 'application/json',
+        //     'User-Agent': this.getUserAgent(),
+        //     ...getPlatformHeaders(),
+        //     ...this.authHeaders(opts),
+        // };
+
+        let mut headers: Headers = HashMap::new();
+        let mut auth_headers: Headers = self.auth_headers(opts);
+        
+        headers.insert("Accept".to_string(), Some("application/json".to_string()));
+        headers.insert("Content-Type".to_string(), Some("application/json".to_string()));
+        headers.insert("User-Agent".to_string(), Some("this.getUserAgent()".to_string()));
+        
+        for (key, value) in auth_headers {
+            if let Some(value) = value {
+                headers.insert(key.clone(), Some(value.clone()));
+            }
+        }
+
+        headers
     }
 
     pub async fn post<Req: Serialize, Rsp: for<'de> Deserialize<'de>>(
         &self,
         path: &str,
-        opts: Option<Req>,
+        opts: Option<RequestOptions<Req>>,
     ) -> Result<Rsp, Box<dyn Error>> {
         self.method_request(Method::POST, path, opts).await
     }
@@ -48,7 +89,7 @@ impl APIClient {
         &self,
         method: Method,
         path: &str,
-        opts: Option<Req>,
+        opts: Option<RequestOptions<Req>>,
     ) -> Result<Rsp, Box<dyn Error>> {
         let url = format!("{}/{}", self.base_url, path);
         let mut retries_remaining = self.max_retries;
@@ -56,8 +97,28 @@ impl APIClient {
 
         loop {
             let request_builder = self.client.request(method.clone(), &url);
-            let request_builder = if let Some(body) = &opts {
-                request_builder.json(body)
+            
+            // begin
+            let headers = if let Some(ref opts) = opts {
+                self.default_headers(opts)
+            } else {
+                self.default_headers::<Value>(&RequestOptions::default())
+            };
+
+            let request_builder = headers.into_iter().fold(request_builder, |rb, (key, value)| {
+                if let Some(value) = value {
+                    rb.header(&key, value)
+                } else {
+                    rb
+                }
+            });
+            // end
+            
+            let request_builder = if let Some(rb) = &opts {
+                let body = rb.body.as_ref().unwrap();
+                let body_as_str = serde_json::to_string(&body)?;
+                // request_builder.json(body)
+                request_builder.body(body_as_str)
             } else {
                 request_builder
             };
@@ -76,7 +137,10 @@ impl APIClient {
                         sleep(delay).await;
                         delay = delay * 2;
                     } else {
-                        let err = format!("Request failed with status: {}", resp.status());
+                        // error with status
+                        // let err = format!("Request failed with status: {}", resp.status());
+                        // error with message
+                        let err = format!("ERROR {}, Request failed: {:?}", resp.status(), resp.text().await);
                         return Err(Box::new(std::io::Error::new(
                             std::io::ErrorKind::Other,
                             err,
@@ -96,6 +160,26 @@ impl APIClient {
         }
     }
 }
+
+#[derive(Default, Clone)]
+pub struct RequestOptions<Req = Option<Value>> {
+    pub method: Option<Method>,
+    pub path: Option<String>,
+    pub query: Option<Req>,
+    pub body: Option<Req>,
+    pub headers: Option<Headers>,
+    pub max_retries: Option<u32>,
+    pub stream: Option<bool>,
+    pub timeout: Option<Duration>,
+    pub http_agent: Option<Arc<Mutex<Client>>>,
+    pub signal: Option<Arc<Mutex<tokio::sync::Notify>>>,
+    pub idempotency_key: Option<String>,
+    pub binary_request: Option<bool>,
+    pub binary_response: Option<bool>,
+    // pub stream_class: Option<Arc<Mutex<Stream>>>,
+}
+
+pub type Headers = HashMap<String, Option<String>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Logprobs {
@@ -126,3 +210,6 @@ pub struct CompletionUsage {
 //     println!("{:#?}", response);
 //     Ok(())
 // }
+
+
+// 

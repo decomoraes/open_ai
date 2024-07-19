@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::resources::completions::Completions;
 use std::collections::HashSet;
 use lazy_static::lazy_static;
-use crate::core::APIClient;
+use crate::core::{APIClient, Headers};
 
 #[derive(Debug, Clone)]
 pub struct ClientOptions {
@@ -87,15 +87,16 @@ impl ClientOptions {
 }
 
 #[derive(Debug, Clone)]
-pub struct OpenAI {
+pub struct OpenAI<'a> {
     pub api_key: String,
     pub organization: Option<String>,
     pub project: Option<String>,
     pub options: ClientOptions,
     pub client: APIClient,
+    pub completions: Completions<'a>,
 }
 
-impl OpenAI {
+impl<'a> OpenAI<'a> {
     pub fn new(opts: ClientOptions) -> Result<Self, String> {
         let api_key = match opts.api_key.clone() {
             Some(key) => key,
@@ -113,13 +114,19 @@ impl OpenAI {
             reqwest::Client::new(),
         );
 
-        Ok(OpenAI {
+        let mut openai = OpenAI {
             api_key,
             organization: opts.organization.clone(),
             project: opts.project.clone(),
             options: opts,
             client,
-        })
+            completions: Completions::new(),
+        };
+
+        openai.client.additional_auth_headers = Some(openai.auth_headers());
+        openai.completions.openai = Some(Rc::new(RefCell::new(openai.clone())));
+
+        Ok(openai)
     }
 
     pub fn default() -> Result<Self, String> {
@@ -142,9 +149,9 @@ impl OpenAI {
         headers
     }
 
-    fn auth_headers(&self) -> HashMap<String, String> {
+    fn auth_headers(&self) -> Headers {
         let mut headers = HashMap::new();
-        headers.insert("Authorization".to_string(), format!("Bearer {}", self.api_key));
+        headers.insert("Authorization".to_string(), Some(format!("Bearer {}", self.api_key)));
         headers
     }
 
@@ -159,7 +166,7 @@ impl OpenAI {
     //         self.options.base_url.as_ref().unwrap_or(&"https://api.openai.com/v1".to_string()),
     //         path
     //     );
-    // 
+    //
     //     let headers_map = self.auth_headers();
     //     let mut headers = HeaderMap::new();
     //     for (key, value) in headers_map {
@@ -168,20 +175,15 @@ impl OpenAI {
     //             HeaderValue::from_str(&value).unwrap(),
     //         );
     //     }
-    // 
+    //
     //     let request = self.client.request(method, &url).headers(headers);
-    // 
+    //
     //     if let Some(params) = params {
     //         request.json(params)
     //     } else {
     //         request
     //     }
     // }
-
-    /// Legacy
-    pub fn completions(&self) -> Completions {
-        Completions::new(self)
-    }
 
     // pub async fn completions(&self, params: HashMap<String, String>) -> Result<reqwest::Response, reqwest::Error> {
     //     self.build_request(reqwest::Method::POST, "completions", Some(&params)).send().await
@@ -278,51 +280,54 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
     use serde_json::json;
     use crate::resources::completions::{CompletionCreate, CompletionCreateParams};
     use super::*;
 
     #[tokio::test]
-    async fn test_completions() {
-        // openai.audio
-        // openai.baseURL
-        // openai.batches
-        // openai.beta
-        // openai.buildRequest(options)
-        // openai.buildURL(path, query)
-        // openai.chat
-        // openai.completions
-        // openai.delete(path)
-        // openai.embeddings
-        // openai.fetchWithTimeout(url, init, ms, controller)
-        // openai.files
-        // openai.fineTuning
-        // openai.get(path)
-        // openai.getAPIList(path, Page)
-        // openai.httpAgent
-        // openai.images
-        // openai.maxRetries
-        // openai.models
-        // openai.moderations
-        // openai.organization
-        // openai.patch(path)
-        // openai.post(path)
-        // openai.project
-        // openai.put(path)
-        // openai.request(options)
-        // openai.requestAPIList(Page, options)
-        // openai.timeout
+    async fn test_completions() -> Result<(), Box<dyn Error>> {
 
-        let openai = OpenAI::new(ClientOptions::new()).unwrap();
-        let completion = openai.completions().create(CompletionCreate::NonStreaming(
-            CompletionCreateParams {
-                model: "gpt-3.5-turbo-instruct".to_string(),
-                prompt: Some(json!("Write a tagline for an ice cream shop.")),
-                ..Default::default()
-            }
-        )).await;
-        // client.
-        // let result = add(2, 2);
-        // assert_eq!(result, 4);
+        let openai = OpenAI::default()?;
+        
+        let completion = openai.completions.create(CompletionCreateParams {
+            model: "gpt-3.5-turbo-instruct".to_string(),
+            prompt: Some(json!("Write a tagline for an ice cream shop.")),
+            ..Default::default()
+        }).await;
+
+        assert!(completion.is_ok());
+        println!("{:?}", completion.unwrap().choices.first().unwrap().text);
+        
+        Ok(())
     }
 }
+
+// openai.audio
+// openai.baseURL
+// openai.batches
+// openai.beta
+// openai.buildRequest(options)
+// openai.buildURL(path, query)
+// openai.chat
+// openai.completions
+// openai.delete(path)
+// openai.embeddings
+// openai.fetchWithTimeout(url, init, ms, controller)
+// openai.files
+// openai.fineTuning
+// openai.get(path)
+// openai.getAPIList(path, Page)
+// openai.httpAgent
+// openai.images
+// openai.maxRetries
+// openai.models
+// openai.moderations
+// openai.organization
+// openai.patch(path)
+// openai.post(path)
+// openai.project
+// openai.put(path)
+// openai.request(options)
+// openai.requestAPIList(Page, options)
+// openai.timeout
