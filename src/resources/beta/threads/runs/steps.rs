@@ -7,7 +7,7 @@ use serde_json::Value;
 use crate::resource::APIResource;
 use crate::core::{self, APIClient, FinalRequestOptions, Headers};
 use crate::resources::beta::threads::runs::steps as steps_api;
-use crate::pagination::{CursorPage, CursorPageParams, Page};
+use crate::pagination::{CursorPage, CursorPageParams, CursorPageResponse, Page};
 
 #[derive(Debug, Clone)]
 pub struct Steps {
@@ -55,7 +55,7 @@ impl Steps {
 
         let page_constructor = |
             client: Rc<RefCell<APIClient>>,
-            body: RunStep,
+            body: CursorPageResponse<RunStep>,
             options: FinalRequestOptions<StepListParams>,
         | {
             CursorPage::new(client, body, options)

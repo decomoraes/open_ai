@@ -126,7 +126,7 @@ impl Assistants {
 
         let page_constructor = |
             client: Rc<RefCell<APIClient>>,
-            body: Assistant,
+            body: CursorPageResponse<Assistant>,
             options: FinalRequestOptions<AssistantListParams>,
         | {
             CursorPage::new(client, body, options)

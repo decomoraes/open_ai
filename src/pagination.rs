@@ -141,8 +141,8 @@ use crate::resource::APIResource;
 use crate::resources::beta::assistants::Assistant;
 use crate::resources::beta::threads::{Run, RunListParams};
 
-pub trait Page<Req: Default + Clone + Serialize, Item>: Sized {
-    fn new(client: Rc<RefCell<APIClient>>, /*response: reqwest::Response,*/ body: Item, options: FinalRequestOptions<Req>) -> Self;
+pub trait Page<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>>: Sized {
+    fn new(client: Rc<RefCell<APIClient>>, /*response: reqwest::Response,*/ body: CursorPageResponse<Item>, options: FinalRequestOptions<Req>) -> Self;
     fn next_page_info(&self) -> Option<PageInfo>;
     fn get_paginated_items(&self) -> Vec<Item>;
     fn has_next_page(&self) -> bool;
@@ -151,8 +151,20 @@ pub trait Page<Req: Default + Clone + Serialize, Item>: Sized {
     // async fn iter_pages(&mut self) -> impl Iterator<Item = Result<Self, Box<dyn Error>>> + '_
 }
 
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct CursorPageResponse<Item> {
+    object: CursorPageResponseObject,
     data: Vec<Item>,
+    first_id: String,
+    last_id: String,
+    has_more: bool
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CursorPageResponseObject {
+    #[default]
+    List,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -167,17 +179,17 @@ pub struct CursorPage<Req: Default + Clone + Serialize, Item: for<'de> Deseriali
     pub client: Rc<RefCell<APIClient>>,
     pub options: FinalRequestOptions<Req>,
     // pub response: Response,
-    pub body: Value,
+    pub body: CursorPageResponse<Item>,
 }
 
 // extends AbstractPage<Item>
 // implements CursorPageResponse<Item>
 
-impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>> Page<Req, Item> for CursorPage<Req, Item> {
+impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone> Page<Req, Item> for CursorPage<Req, Item> {
     fn new(
         client: Rc<RefCell<APIClient>>,
         // response: reqwest::Response,
-        body: Item,
+        body: CursorPageResponse<Item>,
         options: FinalRequestOptions<Req>,
     ) -> Self {
         // super(client, response, body, options);
@@ -186,8 +198,8 @@ impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>> Page<Req
         CursorPage {
             client: client,
             // response: response,
-            data: vec![],
-            body: json!(""),
+            data: body.data.clone(),
+            body: body,
             options: options,
         }
     }
@@ -251,7 +263,7 @@ impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>> Page<Req
 
         let page_constructor = |
             client: APIResource,
-            body: Item,
+            body: CursorPageResponse<Item>,
             options: FinalRequestOptions<Req>,
         | {
             CursorPage::new(client, body, options)

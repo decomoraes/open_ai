@@ -89,6 +89,10 @@ impl ClientOptions {
             dangerously_allow_browser: false,
         }
     }
+    
+    pub fn default() -> Self {
+        ClientOptions::new()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -302,22 +306,24 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::error::Error;
     use serde_json::json;
-    use crate::OpenAI;
+    use crate::{ClientOptions, OpenAI};
     use crate::resources::beta::assistants::{assistant_list_params, AssistantCreateParams, AssistantListParams};
     use crate::resources::beta::assistants::Assistant;
     use crate::resources::beta::assistants;
     use crate::resources::beta::assistants::assistant::tool_resources::FileSearch;
     use crate::resources::beta::assistants::assistant::ToolResources;
-    use crate::resources::chat::{ImageURL, ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, ChatCompletionContent::{self, Multiple}, Detail};
+    use crate::resources::chat::{ImageURL, ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, ChatCompletionContent::{self, Multiple}, Detail, ChatCompletionContentPart};
     use crate::resources::chat::ChatCompletionContentPart::Image;
     use crate::resources::chat::ChatCompletionContent::Text;
     use crate::resources::chat::ChatModel;
     use crate::resources::completions::CompletionCreateParams;
     use crate::resources::beta::assistants::AssistantTool::{self, CodeInterpreter};
-    use crate::resources::beta::threads::{Message, MessageCreateParams, messages, RunCreateParams, ThreadCreateParams};
+    use crate::resources::beta::threads::{Message, MessageCreateParams, MessageListParams, messages, RunCreateParams, ThreadCreateParams};
     use crate::resources::beta::threads::messages::{message, message_create_params};
+    use crate::resources::beta::threads::runs::runs::RunStatus;
 
     #[tokio::test]
     async fn test_completions() -> Result<(), Box<dyn Error>> {
@@ -337,7 +343,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_chat_completions() -> Result<(), Box<dyn Error>> {
-        let openai = OpenAI::default()?;
+        let openai = OpenAI::new(ClientOptions::new())?;
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
             model: ChatModel::Gpt4o.into(),
             messages: vec![
@@ -345,17 +351,20 @@ mod tests {
                     content: "You are a helpful assistant.".to_string(),
                     name: None,
                 }),
+                // ChatCompletionMessageParam::User(ChatCompletionUserParam {
+                //     content: Text("What is the capital of the United States?".to_string()),
+                //     name: None,
+                // }),
                 ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                    content: Text("What is the capital of the United States?".to_string()),
-                    name: None,
-                }),
-                ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                    content: Multiple(vec![Image {
-                        image_url: ImageURL {
-                            url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
-                            detail: Some(Detail::Auto),
-                        }
-                    }]),
+                    content: Multiple(vec![
+                        ChatCompletionContentPart::Text{ text: "What happened to my car?".to_string() },
+                        Image {
+                            image_url: ImageURL {
+                                url: "https://media.infopay.net/thumbnails/lx1gBJsFEGfwcXqKPxMkSpi5FGv2k0TtWniTAvTv.webp".to_string(),
+                                detail: Some(Detail::Auto),
+                            }
+                        },
+                    ]),
                     name: None,
                 }),
             ],
@@ -442,55 +451,16 @@ mod tests {
 
         let my_assistant = openai.beta.assistants.create(
             AssistantCreateParams {
-                instructions: Some("You are a personal math tutor. When asked a question, write and run Python code to answer the question.".to_string()),
                 name: Some("Math Tutor".to_string()),
+                instructions: Some("You are a personal math tutor. When asked a question, write and run Python code to answer the question.".to_string()),
                 tools: Some(vec![CodeInterpreter]),
                 model: "gpt-4o".to_string(),
                 ..Default::default()
-                // description: None,
-                // top_p: None,
-                // metadata: None,
-                // response_format: None,
-                // temperature: None,
-                // tool_resources: None,
             },
             None,
-        ).await;
-
+        ).await?;
+        
         println!("{:?}", my_assistant);
-
-        let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-            model: ChatModel::Gpt4o.into(),
-            messages: vec![
-                ChatCompletionMessageParam::System(ChatCompletionSystemParam {
-                    content: "You are a helpful assistant.".to_string(),
-                    name: None,
-                }),
-                ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                    content: Multiple(vec![Image {
-                        image_url: ImageURL {
-                            url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
-                            detail: Some(Detail::Auto),
-                        }
-                    }]),
-                    name: None,
-                }),
-            ],
-            ..Default::default()
-        }).await;
-
-        match &completion {
-            Ok(response) => {
-                println!("success: {:?}", response.choices.first().unwrap().message);
-            }
-            Err(e) => {
-                let error = e.to_string();
-                println!("error: {:?}", error);
-            }
-        }
-
-        assert!(completion.is_ok());
-        println!("{:?}", completion.unwrap().choices.first().unwrap().message);
 
         Ok(())
     }
@@ -638,7 +608,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_thread_and_create_message_and_create_run_and_poll() -> Result<(), Box<dyn Error>> {
-        let openai = OpenAI::default()?;
+        let assistant_id = env::var("ASSISTANT_ID").ok().expect("ASSISTANT_ID is not set");
+        
+        let openai = OpenAI::new(ClientOptions::default())?;
 
         let thread = openai.beta.threads.create(ThreadCreateParams::default()).await?;
 
@@ -657,27 +629,35 @@ mod tests {
         let run = openai.beta.threads.runs.create_and_poll(
             &thread.id,
             RunCreateParams {
-                assistant_id: "asst_ABcDEFgH12345678910xZZZz".to_string(),
+                assistant_id: assistant_id.to_string(),
                 instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
                 ..Default::default()
             },
             None
-        ).await;
+        ).await?;
 
         println!("{:?}", message);
 
-        match &run {
-            Ok(response) => {
-                println!("success: {:#?}", response);
+        if run.status == RunStatus::Completed {
+            let messages = openai.beta.threads.messages.list(
+                &run.thread_id,
+                None,
+                None,
+            ).await?;
+            
+            for message in messages.data.iter().rev() {
+                match &message.content.first().unwrap() {
+                    messages::MessageContent::Text { text } => {
+                        println!("{:?} > {:?}", message.role, text.value);
+                    }
+                    _ => {}
+                }
             }
-            Err(e) => {
-                let error = e.to_string();
-                println!("error: {:?}", error);
-            }
+        } else {
+            println!("{:?}", run.status);
+            panic!("Run not completed");
         }
-
-        assert!(run.is_ok());
-        println!("{:?}", run);
+        
 
         Ok(())
     }

@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use serde_json::Value;
 use tokio::time::sleep;
-use crate::pagination::{Page, CursorPage};
+use crate::pagination::{Page, CursorPage, CursorPageResponse};
 pub use crate::core::request_options::*;
 
 pub type APIPromise<T> = tokio::task::JoinHandle<Result<T, Box<dyn Error>>>;
@@ -105,13 +105,13 @@ impl APIClient {
         self.method_request(Method::DELETE, path, opts).await
     }
 
-    pub async fn get_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>>(
+    pub async fn get_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone>(
         &self,
         path: &str,
         // Page: new (...args: any[]) => PageImpl,
         page: impl FnOnce(
             Rc<RefCell<APIClient>>,
-            Item,
+            CursorPageResponse<Item>,
             FinalRequestOptions<Req>,
         ) -> CursorPage<Req, Item>,
         opts: Option<RequestOptions<Req>>,
@@ -120,12 +120,12 @@ impl APIClient {
         self.request_api_list::<Req, Item>(page, opts).await
     }
 
-    pub async fn request_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>/*, PageImpl: Page<Req, Item> */>(
+    pub async fn request_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone /*, PageImpl: Page<Req, Item> */>(
         &self,
         // Page: new (...args: ConstructorParameters<typeof Page>) => PageClass,
         page: impl FnOnce(
             Rc<RefCell<APIClient>>,
-            Item,
+            CursorPageResponse<Item>,
             FinalRequestOptions<Req>,
         ) -> CursorPage<Req, Item>,
         options: FinalRequestOptions<Req>,
@@ -137,12 +137,12 @@ impl APIClient {
         request
     }
 
-    async fn make_request<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>>(
+    async fn make_request<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone>(
         &self,
         opts: FinalRequestOptions<Req>,
         retries_remaining: Option<()>
     ) -> Result<CursorPage<Req, Item>, Box<dyn Error>> {
-        let response = self.request::<Req, Item>(opts.clone()).await?;
+        let response = self.request::<Req, CursorPageResponse<Item>>(opts.clone()).await?;
         let cursor_page = CursorPage::new(
             Rc::new(RefCell::new(self.clone())),
             // reqwest::Response::from(),

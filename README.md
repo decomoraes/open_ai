@@ -31,13 +31,13 @@ extern crate crab_ai;
 The full API of this library can be found in the documentation.
 
 ```rust
-use crab_ai::{OpenAI, ChatCompletionCreateParams, ChatModel, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, Text, Image, ImageURL, Detail, Multiple};
+use crab_ai::{OpenAI, ClientOptions, ChatCompletionCreateParams, ChatModel, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, Text, Image, ImageURL, Detail, Multiple};
 use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
-    let openai = OpenAI::new(api_key)?;
+    let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
         model: ChatModel::Gpt4o.into(),
@@ -47,16 +47,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 name: None,
             }),
             ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                content: Text("What is the capital of the United States?".to_string()),
-                name: None,
-            }),
-            ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                content: Multiple(vec![Image {
-                    image_url: ImageURL {
-                        url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
-                        detail: Some(Detail::Auto),
-                    }
-                }]),
+                content: Multiple(vec![
+                    ChatCompletionContentPart::Text{ text: "What happened to my car?".to_string() },
+                    Image {
+                        image_url: ImageURL {
+                            url: "https://media.infopay.net/thumbnails/lx1gBJsFEGfwcXqKPxMkSpi5FGv2k0TtWniTAvTv.webp".to_string(),
+                            detail: Some(Detail::Auto),
+                        }
+                    },
+                ]),
                 name: None,
             }),
         ],

@@ -7,7 +7,7 @@ use serde_json::Value;
 use crate::resource::{APIResource};
 use crate::core::{self, APIClient, FinalRequestOptions, Headers, RequestOptions};
 use crate::resources::beta::assistants as assistants_api;
-use crate::pagination::{CursorPage, Page};
+use crate::pagination::{CursorPage, CursorPageResponse, Page};
 use crate::resources::chat::ChatCompletionContentPart;
 
 #[derive(Debug, Clone)]
@@ -114,7 +114,7 @@ impl Messages {
 
         let page_constructor = |
             client: Rc<RefCell<APIClient>>,
-            body: Message,
+            body: CursorPageResponse<Message>,
             options: FinalRequestOptions<MessageListParams>,
         | {
             CursorPage::new(client, body, options)

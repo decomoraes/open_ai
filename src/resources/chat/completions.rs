@@ -358,14 +358,14 @@ impl Default for ChatCompletionContent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ChatCompletionContentPart {
-    Text(String),
+    Text{ text: String },
     #[serde(rename = "image_url")]
     Image { image_url: chat_completion_content_part_image::ImageURL },
 }
 
 impl Default for ChatCompletionContentPart {
     fn default() -> Self {
-        ChatCompletionContentPart::Text(Default::default())
+        ChatCompletionContentPart::Text{ text: Default::default() }
     }
 }
 

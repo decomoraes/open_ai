@@ -13,7 +13,7 @@ use crate::resources::beta::assistants as assistants_api;
 use crate::resources::beta::threads::messages as messages_api;
 use crate::resources::beta::threads as threads_api;
 use crate::resources::beta::threads::runs::steps as steps_api;
-use crate::pagination::{CursorPage, CursorPageParams, Page};
+use crate::pagination::{CursorPage, CursorPageParams, CursorPageResponse, Page};
 // use crate::streaming::{Stream};
 
 #[derive(Debug, Clone)]
@@ -129,9 +129,10 @@ impl Runs {
             }
         }
 
-        let page_constructor = |client: APIResource,
-                                body: Run,
-                                options: FinalRequestOptions<RunListParams>,
+        let page_constructor = |
+            client: APIResource,
+            body: CursorPageResponse<Run>,
+            options: FinalRequestOptions<RunListParams>,
         | {
             CursorPage::new(client, body, options)
         };
@@ -631,7 +632,7 @@ pub mod run {
 /// The status of the run, which can be either `queued`, `in_progress`,
 /// `requires_action`, `cancelling`, `cancelled`, `failed`, `completed`,
 /// `incomplete`, or `expired`.
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum RunStatus {
     #[default]
