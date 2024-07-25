@@ -89,7 +89,7 @@ impl ClientOptions {
             dangerously_allow_browser: false,
         }
     }
-    
+
     pub fn default() -> Self {
         ClientOptions::new()
     }
@@ -459,7 +459,7 @@ mod tests {
             },
             None,
         ).await?;
-        
+
         println!("{:?}", my_assistant);
 
         Ok(())
@@ -610,7 +610,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_thread_and_create_message_and_create_run_and_poll() -> Result<(), Box<dyn Error>> {
         let assistant_id = env::var("ASSISTANT_ID").ok().expect("ASSISTANT_ID is not set");
-        
+
         let openai = OpenAI::new(ClientOptions::default())?;
 
         let thread = openai.beta.threads.create(ThreadCreateParams::default()).await?;
@@ -631,7 +631,7 @@ mod tests {
             &thread.id,
             RunCreateParams {
                 assistant_id: assistant_id.to_string(),
-                instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
+                additional_instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
                 ..Default::default()
             },
             None
@@ -645,7 +645,7 @@ mod tests {
                 None,
                 None,
             ).await?;
-            
+
             for message in messages.data.iter().rev() {
                 match &message.content.first().unwrap() {
                     messages::MessageContent::Text { text } => {
@@ -658,7 +658,7 @@ mod tests {
             println!("{:?}", run.status);
             panic!("Run not completed");
         }
-        
+
 
         Ok(())
     }

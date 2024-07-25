@@ -1,13 +1,13 @@
 [package]
 name = "crab_ai"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["André de Moraes <deco.moraes@icloud.com>"]
 readme = "README.md"
 license = "MIT"
 edition = "2021"
 description = "OpenAI library for Rust"
 repository = "https://github.com/decomoraes/crab_ai"
-keywords = ["openai", "api", "client", "rust"]
+keywords = ["openai", "api", "client", "rust", "ai"]
 categories = ["api-bindings", "network-programming"]
 homepage = "https://github.com/decomoraes/crab_ai"
 documentation = "https://docs.rs/crab_ai"

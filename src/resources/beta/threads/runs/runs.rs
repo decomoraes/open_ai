@@ -348,7 +348,7 @@ pub struct RequiredActionFunctionToolCall {
     /// The type of tool call the output is required for. For now, this is always
     /// `function`.
     #[serde(rename = "type")]
-    pub kind: required_action_function_tool_call::Function,
+    pub kind: required_action_function_tool_call::Type,
 }
 
 pub mod required_action_function_tool_call {
