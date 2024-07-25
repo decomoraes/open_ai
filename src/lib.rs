@@ -499,7 +499,7 @@ mod tests {
     async fn test_retrieve_assistant() -> Result<(), Box<dyn Error>> {
 
         let test = Assistant {
-            id: "asst_AVrHIQnH36EvZdUK6b9xZZZi".to_string(),
+            id: "asst_ABcDEFgH12345678910xZZZz".to_string(),
             object: assistants::assistant::Object::Assistant,
             created_at: 1719335980,
             name: Some("Maia".to_string()),
@@ -525,7 +525,7 @@ mod tests {
         let openai = OpenAI::default()?;
 
         let my_assistant = openai.beta.assistants.retrieve(
-            "asst_AVrHIQnH36EvZdUK6b9xZZZi",
+            "asst_ABcDEFgH12345678910xZZZz",
             None,
         ).await;
 
@@ -657,7 +657,7 @@ mod tests {
         let run = openai.beta.threads.runs.create_and_poll(
             &thread.id,
             RunCreateParams {
-                assistant_id: "asst_AVrHIQnH36EvZdUK6b9xZZZi".to_string(),
+                assistant_id: "asst_ABcDEFgH12345678910xZZZz".to_string(),
                 instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
                 ..Default::default()
             },

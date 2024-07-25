@@ -102,7 +102,7 @@ Here's an example of how to create a run using the Assistant API and poll until 
 let run = openai.beta.threads.runs.create_and_poll(
     &thread.id,
     RunCreateParams {
-        assistant_id: "asst_AVrHIQnH36EvZdUK6b9xZZZi".to_string(),
+        assistant_id: "asst_ABcDEFgH12345678910xZZZz".to_string(),
         instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
         ..Default::default()
     },
