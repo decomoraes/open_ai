@@ -8,6 +8,7 @@ pub use completions::Completions;
 pub use completions::ChatCompletion;
 pub use completions::ChatCompletionAssistantMessageParam;
 pub use completions::ChatCompletionChunk;
+pub use completions::ChatCompletionContent;
 pub use completions::ChatCompletionContentPart;
 pub use completions::ChatCompletionContentPartImage;
 pub use completions::ChatCompletionContentPartText;
@@ -20,7 +21,8 @@ pub use completions::ChatCompletionUserParam;
 pub use completions::ChatCompletionSystemParam;
 pub use completions::ChatCompletionToolParam;
 
-pub use completions::ChatContentPart;
+pub use completions::chat_completion_content_part_image::ImageURL;
+pub use completions::chat_completion_content_part_image::Detail;
 
 pub use completions::ChatCompletionMessageToolCall;
 pub use completions::ChatCompletionNamedToolChoice;

@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorObject {
-    code: Option<String>,
-    message: String,
-    param: Option<String>,
+    pub code: Option<String>,
+    pub message: String,
+    pub param: Option<String>,
     #[serde(rename = "type")]
-    kind: String,
+    pub kind: String,
 }
 
-#[derive(Default, Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionDefinition {
     /// The name of the function to be called. Must be a-z, A-Z, 0-9, or contain
     /// underscores and dashes, with a maximum length of 64.
@@ -40,4 +40,4 @@ pub struct FunctionDefinition {
 /// documentation about the format.
 ///
 /// Omitting `parameters` defines a function with an empty parameter list.
-pub type FunctionParameters = HashMap<String, Value /* unknown */>;
+pub type FunctionParameters = HashMap<String, Option<Value>>;

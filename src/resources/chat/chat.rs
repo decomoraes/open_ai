@@ -2,22 +2,22 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use super::completions as CompletionsAPI;
 use serde::{Deserialize, Serialize};
-use crate::OpenAI;
+use crate::resource::APIResource;
 
 #[derive(Debug, Clone)]
-pub struct Chat<'a> {
-    pub completions: CompletionsAPI::Completions<'a>,
+pub struct Chat {
+    pub completions: CompletionsAPI::Completions,
 }
 
-impl<'a> Chat<'a> {
+impl Chat {
     pub fn new() -> Self {
         Chat {
             completions: CompletionsAPI::Completions::new(),
         }
     }
     
-    pub fn set_openai(&mut self, openai: Rc<RefCell<OpenAI<'a>>>) {
-        self.completions.openai = Some(openai);
+    pub fn set_client(&mut self, openai: APIResource) {
+        self.completions.client = Some(openai);
     }
 }
 

@@ -1,27 +1,26 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
-use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use crate::core::RequestOptions;
-use crate::{OpenAI, OpenAIObject};
+use crate::OpenAIObject;
+use crate::resource::APIResource;
 
 #[derive(Debug, Clone)]
-pub struct Completions<'a> {
-    pub openai: Option<Rc<RefCell<OpenAI<'a>>>>,
+pub struct Completions {
+    pub client: Option<APIResource>,
 }
 
-impl<'a> Completions<'a> {
+impl Completions {
     pub fn new() -> Self {
         Completions {
-            openai: None,
+            client: None,
         }
     }
 
     /// Creates a completion for the provided prompt and parameters.
     pub async fn create(&self, body: CompletionCreateParams) -> Result<Completion, Box<dyn Error>> {
         let stream = body.stream.unwrap_or(false);
-        self.openai.as_ref().unwrap().borrow().client.post(
+        self.client.as_ref().unwrap().borrow().post(
             "/completions",
             Some( RequestOptions {
                 body: Some(body),
@@ -84,7 +83,7 @@ pub struct CompletionChoice {
 }
 
 /// Represents the log probabilities for a completion choice.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Logprobs {
     pub text_offset: Option<Vec<u32>>,
     pub token_logprobs: Option<Vec<f32>>,
@@ -93,7 +92,7 @@ pub struct Logprobs {
 }
 
 /// Usage statistics for the completion request.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CompletionUsage {
     /// Number of tokens in the generated completion.
     pub completion_tokens: u32,
@@ -105,7 +104,7 @@ pub struct CompletionUsage {
     pub total_tokens: u32,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum CompletionCreate {
     NonStreaming(CompletionCreateParams),
@@ -118,7 +117,7 @@ impl Default for CompletionCreate {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct CompletionCreateParams {
     /// ID of the model to use. You can use the
     /// [List models](https://platform.openai.com/docs/api-reference/models/list) API to
@@ -250,7 +249,7 @@ pub struct CompletionCreateParams {
     pub user: Option<String>,
 }
 
-// #[derive(Debug, Deserialize, Serialize)]
+// #[derive(Debug, Clone, Deserialize, Serialize)]
 // pub struct CompletionCreateParamsNonStreaming {
 //     #[serde(flatten)]
 //     pub base: CompletionCreateParamsBase,
@@ -264,7 +263,7 @@ pub struct CompletionCreateParams {
 //     pub stream: Option<bool>,
 // }
 //
-// #[derive(Debug, Deserialize, Serialize)]
+// #[derive(Debug, Clone, Deserialize, Serialize)]
 // pub struct CompletionCreateParamsStreaming {
 //     #[serde(flatten)]
 //     pub base: CompletionCreateParamsBase,
@@ -278,7 +277,7 @@ pub struct CompletionCreateParams {
 //     pub stream: bool,
 // }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StreamOptions {
     // Define fields for stream options here
 }
