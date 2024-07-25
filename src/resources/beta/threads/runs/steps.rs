@@ -91,7 +91,7 @@ pub mod code_interpreter_logs {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Logs,
@@ -116,7 +116,7 @@ pub mod code_interpreter_output_image {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Image,
@@ -181,7 +181,7 @@ pub mod code_interpreter_tool_call {
             use super::*;
 
             #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-            #[serde(untagged, rename_all = "snake_case")]
+            #[serde(rename_all = "snake_case")]
             pub enum Type {
                 #[default]
                 Logs,
@@ -208,7 +208,7 @@ pub mod code_interpreter_tool_call {
             }
 
             #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-            #[serde(untagged, rename_all = "snake_case")]
+            #[serde(rename_all = "snake_case")]
             pub enum Type {
                 #[default]
                 Image,
@@ -217,7 +217,7 @@ pub mod code_interpreter_tool_call {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         CodeInterpreter,
@@ -285,7 +285,7 @@ pub mod code_interpreter_tool_call_delta {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         CodeInterpreter,
@@ -310,7 +310,7 @@ pub mod file_search_tool_call {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FileSearch,
@@ -339,7 +339,7 @@ pub mod file_search_tool_call_delta {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FileSearch,
@@ -378,7 +378,7 @@ pub mod function_tool_call {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Function,
@@ -425,7 +425,7 @@ pub mod function_tool_call_delta {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Function,
@@ -452,7 +452,7 @@ pub mod message_creation_step_details {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         MessageCreation,
@@ -588,7 +588,7 @@ pub mod run_step {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         MessageCreation,
@@ -676,7 +676,7 @@ pub mod run_step_delta_message_delta {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         MessageCreation,
@@ -731,7 +731,7 @@ pub mod tool_call_delta_object {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         ToolCalls,
@@ -755,7 +755,7 @@ pub mod tool_calls_step_details {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         ToolCalls,

@@ -667,7 +667,7 @@ pub mod file_search_tool {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FileSearch,
@@ -687,7 +687,7 @@ pub mod function_tool {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Function,

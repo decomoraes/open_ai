@@ -238,7 +238,7 @@ pub mod file_citation_annotation {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FileCitation,
@@ -286,7 +286,7 @@ pub mod file_citation_delta_annotation {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FileCitation,
@@ -319,7 +319,7 @@ pub mod file_path_annotation {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FilePath,
@@ -362,7 +362,7 @@ pub mod file_path_delta_annotation {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         FilePath,
@@ -415,7 +415,7 @@ pub mod image_file_delta_block {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         ImageFile,
@@ -465,7 +465,7 @@ pub mod image_url_delta_block {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         ImageUrl,
@@ -557,7 +557,7 @@ pub mod message {
             use super::*;
 
             #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-            #[serde(untagged, rename_all = "snake_case")]
+            #[serde(rename_all = "snake_case")]
             pub enum Type {
                 #[default]
                 FileSearch,
@@ -732,7 +732,7 @@ pub mod text_content_block {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Text,
@@ -754,7 +754,7 @@ pub mod text_content_block_param {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Text,
@@ -789,7 +789,7 @@ pub mod text_delta_block {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Text,
@@ -870,7 +870,7 @@ pub mod message_create_params {
             use super::*;
 
             #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-            #[serde(untagged, rename_all = "snake_case")]
+            #[serde(rename_all = "snake_case")]
             pub enum Type {
                 #[default]
                 FileSearch,

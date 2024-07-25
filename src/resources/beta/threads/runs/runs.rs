@@ -364,7 +364,7 @@ pub mod required_action_function_tool_call {
     }
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Type {
         #[default]
         Function,
@@ -578,7 +578,7 @@ pub mod run {
         }
 
         #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-        #[serde(untagged, rename_all = "snake_case")]
+        #[serde(rename_all = "snake_case")]
         pub enum Type {
             #[default]
             SubmitToolOutputs,
@@ -869,7 +869,7 @@ pub mod run_create_params {
                 use super::*;
 
                 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-                #[serde(untagged, rename_all = "snake_case")]
+                #[serde(rename_all = "snake_case")]
                 pub enum Type {
                     #[default]
                     FileSearch,
@@ -906,7 +906,7 @@ pub mod run_create_params {
         use super::*;
 
         #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-        #[serde(untagged, rename_all = "snake_case")]
+        #[serde(rename_all = "snake_case")]
         pub enum Type {
             #[default]
             Auto,
@@ -1178,7 +1178,7 @@ pub mod run_create_and_poll_params {
         use super::*;
 
         #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-        #[serde(untagged, rename_all = "snake_case")]
+        #[serde(rename_all = "snake_case")]
         pub enum Type {
             #[default]
             Auto,
@@ -1414,7 +1414,7 @@ pub mod run_create_and_stream_params {
         use super::*;
 
         #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-        #[serde(untagged, rename_all = "snake_case")]
+        #[serde(rename_all = "snake_case")]
         pub enum Type {
             #[default]
             Auto,
@@ -1651,7 +1651,7 @@ pub mod run_stream_params {
         use super::*;
 
         #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-        #[serde(untagged, rename_all = "snake_case")]
+        #[serde(rename_all = "snake_case")]
         pub enum Type {
             #[default]
             Auto,

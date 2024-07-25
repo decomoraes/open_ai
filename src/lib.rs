@@ -467,9 +467,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_retrieve_assistant() -> Result<(), Box<dyn Error>> {
+        let assistant_id = env::var("ASSISTANT_ID").ok().expect("ASSISTANT_ID is not set");
 
         let test = Assistant {
-            id: "asst_ABcDEFgH12345678910xZZZz".to_string(),
+            id: assistant_id.clone(),
             object: assistants::assistant::Object::Assistant,
             created_at: 1719335980,
             name: Some("Maia".to_string()),
@@ -495,7 +496,7 @@ mod tests {
         let openai = OpenAI::default()?;
 
         let my_assistant = openai.beta.assistants.retrieve(
-            "asst_ABcDEFgH12345678910xZZZz",
+            &assistant_id,
             None,
         ).await;
 
