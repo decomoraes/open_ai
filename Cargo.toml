@@ -1,6 +1,6 @@
 [package]
 name = "crab_ai"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["André de Moraes <deco.moraes@icloud.com>"]
 readme = "README.md"
 license = "MIT"
@@ -13,7 +13,7 @@ homepage = "https://github.com/decomoraes/crab_ai"
 documentation = "https://docs.rs/crab_ai"
 
 [dependencies]
-reqwest = { version = "0.12.5", features = ["json", "stream"] }
+reqwest = { version = "0.12.5", features = ["json", "stream", "rustls-tls"], default-features = false }
 serde = { version = "1.0.204", features = ["derive"] }
 tokio = { version = "1.38.1", features = ["full"] }
 serde_json = "1.0.120"

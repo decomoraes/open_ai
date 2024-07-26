@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.8"
+crab_ai = "0.1.9"
 ```
 
 ## Usage
