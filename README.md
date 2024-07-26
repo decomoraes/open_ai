@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.4"
+crab_ai = "0.1.5"
 ```
 
 Then, add this to your crate root:
@@ -45,7 +45,6 @@ use crab_ai::{ClientOptions, OpenAI};
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // OPENAI_API_KEY is required, you can set it in your environment variables.
     // e.g. `export OPENAI_API_KEY="your-api-key"`
-
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
@@ -74,6 +73,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 While you can provide an `api_key` directly, we recommend using environment variables to keep your API key secure.
+
+### Examples
+
+Refer to the [examples](https://github.com/decomoraes/crab_ai/tree/main/examples) directory for usage examples.
+
 
 ### OpenAI Assistant Beta
 
