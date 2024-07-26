@@ -31,22 +31,31 @@ extern crate crab_ai;
 The full API of this library can be found in the documentation.
 
 ```rust
-use crab_ai::{OpenAI, ClientOptions, ChatCompletionCreateParams, ChatModel, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, Text, Image, ImageURL, Detail, Multiple};
-use std::env;
+use crab_ai::resources::chat::{
+    ChatCompletionContent::Multiple,
+    ChatCompletionContentPart::Image,
+    ChatCompletionCreateParams,
+    ChatCompletionMessageParam::{System, User},
+    ChatModel::Gpt4o,
+    Detail, ImageURL,
+};
+use crab_ai::{ClientOptions, OpenAI};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
+    // OPENAI_API_KEY is required, you can set it in your environment variables.
+    // e.g. `export OPENAI_API_KEY="your-api-key"`
+
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-        model: ChatModel::Gpt4o.into(),
+        model: Gpt4o.into(),
         messages: vec![
-            ChatCompletionMessageParam::System{
+            System{
                 content: "You are a helpful assistant.".to_string(),
                 name: None,
             },
-            ChatCompletionMessageParam::User{
+            User{
                 content: Multiple(vec![Image {
                     image_url: ImageURL {
                         url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),

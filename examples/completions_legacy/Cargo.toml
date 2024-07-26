@@ -1,0 +1,9 @@
+[package]
+name = "completions_legacy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.38.1", features = ["full"] }
+crab_ai = "0.1.4"
+serde_json = "1.0.120"

@@ -1,0 +1,8 @@
+[package]
+name = "chat-completions"
+version = "0.1.4"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.38.1", features = ["full"] }
+crab_ai = "0.1.4"
