@@ -17,13 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.5"
-```
-
-Then, add this to your crate root:
-
-```rust
-extern crate crab_ai;
+crab_ai = "0.1.6"
 ```
 
 ## Usage
@@ -31,38 +25,23 @@ extern crate crab_ai;
 The full API of this library can be found in the documentation.
 
 ```rust
-use crab_ai::resources::chat::{
-    ChatCompletionContent::Multiple,
-    ChatCompletionContentPart::Image,
-    ChatCompletionCreateParams,
-    ChatCompletionMessageParam::{System, User},
-    ChatModel::Gpt4o,
-    Detail, ImageURL,
+use crab_ai::{OpenAI, ClientOptions};
+use crab_ai::resources::chat::{ChatCompletionContent::{Multiple, Text}, Detail,
+    ChatCompletionContentPart::Image, ChatCompletionCreateParams, ImageURL,
+    ChatCompletionMessageParam::{Assistant, System, User}, ChatModel::Gpt4o,
 };
-use crab_ai::{ClientOptions, OpenAI};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // OPENAI_API_KEY is required, you can set it in your environment variables.
-    // e.g. `export OPENAI_API_KEY="your-api-key"`
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
         model: Gpt4o.into(),
         messages: vec![
-            System{
-                content: "You are a helpful assistant.".to_string(),
-                name: None,
-            },
-            User{
-                content: Multiple(vec![Image {
-                    image_url: ImageURL {
-                        url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
-                        detail: Some(Detail::Auto),
-                    }
-                }]),
-                name: None,
-            },
+            System{ content: "You are a helpful assistant.".to_string(), name: None },
+            User{ content: Text("What is the capital of the United States?".to_string()), name: None },
+            Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020.".to_string()), name: None, tool_calls: None },
+            User{ content: Text("Where was it played?".to_string()), name: None },
         ],
         ..Default::default()
     }).await?;
@@ -77,7 +56,6 @@ While you can provide an `api_key` directly, we recommend using environment vari
 ### Examples
 
 Refer to the [examples](https://github.com/decomoraes/crab_ai/tree/main/examples) directory for usage examples.
-
 
 ### OpenAI Assistant Beta
 
@@ -117,8 +95,19 @@ let run = openai.beta.threads.runs.create_and_poll(
     },
     None
 ).await?;
-```
 
-More information on the lifecycle of a Run can be found in the [Run Lifecycle Documentation](https://platform.openai.com/docs/assistants/how-it-works/run-lifecycle).
+if run.status == RunStatus::Completed {
+    let messages = openai.beta.threads.messages.list(&run.thread_id, None, None).await?;
+
+    for message in messages.data.iter().rev() {
+        match &message.content.first().unwrap() {
+            messages::MessageContent::Text { text } => {
+                println!("{:?} > {:?}", message.role, text.value);
+            }
+            _ => {}
+        }
+    }
+}
+```
 
 By integrating these features, the Crab AI library provides a robust interface for utilizing the latest capabilities of the OpenAI API, including the Assistant API currently in beta.

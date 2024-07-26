@@ -1,5 +1,5 @@
 [package]
-name = "open-ai"
+name = "crab_ai"
 version = "0.1.6"
 authors = ["André de Moraes <deco.moraes@icloud.com>"]
 readme = "README.md"
