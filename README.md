@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.0"
+crab_ai = "0.1.4"
 ```
 
 Then, add this to your crate root:
@@ -42,22 +42,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
         model: ChatModel::Gpt4o.into(),
         messages: vec![
-            ChatCompletionMessageParam::System(ChatCompletionSystemParam {
+            ChatCompletionMessageParam::System{
                 content: "You are a helpful assistant.".to_string(),
                 name: None,
-            }),
-            ChatCompletionMessageParam::User(ChatCompletionUserParam {
-                content: Multiple(vec![
-                    ChatCompletionContentPart::Text{ text: "What happened to my car?".to_string() },
-                    Image {
-                        image_url: ImageURL {
-                            url: "https://media.infopay.net/thumbnails/lx1gBJsFEGfwcXqKPxMkSpi5FGv2k0TtWniTAvTv.webp".to_string(),
-                            detail: Some(Detail::Auto),
-                        }
-                    },
-                ]),
+            },
+            ChatCompletionMessageParam::User{
+                content: Multiple(vec![Image {
+                    image_url: ImageURL {
+                        url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
+                        detail: Some(Detail::Auto),
+                    }
+                }]),
                 name: None,
-            }),
+            },
         ],
         ..Default::default()
     }).await?;

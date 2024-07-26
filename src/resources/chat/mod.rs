@@ -16,10 +16,10 @@ pub use completions::ChatCompletionFunctionCallOption;
 pub use completions::ChatCompletionFunctionMessageParam;
 pub use completions::ChatCompletionMessage;
 pub use completions::ChatCompletionMessageParam;
-pub use completions::ChatCompletionAssistantParam;
-pub use completions::ChatCompletionUserParam;
-pub use completions::ChatCompletionSystemParam;
-pub use completions::ChatCompletionToolParam;
+// pub use completions::ChatCompletionAssistantParam;
+// pub use completions::ChatCompletionUserParam;
+// pub use completions::ChatCompletionSystemParam;
+// pub use completions::ChatCompletionToolParam;
 
 pub use completions::chat_completion_content_part_image::ImageURL;
 pub use completions::chat_completion_content_part_image::Detail;

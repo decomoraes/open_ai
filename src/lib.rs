@@ -315,7 +315,7 @@ mod tests {
     use crate::resources::beta::assistants;
     use crate::resources::beta::assistants::assistant::tool_resources::FileSearch;
     use crate::resources::beta::assistants::assistant::ToolResources;
-    use crate::resources::chat::{ImageURL, ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionSystemParam, ChatCompletionUserParam, ChatCompletionContent::{self, Multiple}, Detail, ChatCompletionContentPart};
+    use crate::resources::chat::{ImageURL, ChatCompletionCreateParams, ChatCompletionMessageParam, ChatCompletionContent::{self, Multiple}, Detail, ChatCompletionContentPart};
     use crate::resources::chat::ChatCompletionContentPart::Image;
     use crate::resources::chat::ChatCompletionContent::Text;
     use crate::resources::chat::ChatModel;
@@ -347,15 +347,15 @@ mod tests {
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
             model: ChatModel::Gpt4o.into(),
             messages: vec![
-                ChatCompletionMessageParam::System(ChatCompletionSystemParam {
+                ChatCompletionMessageParam::System{
                     content: "You are a helpful assistant.".to_string(),
                     name: None,
-                }),
+                },
                 // ChatCompletionMessageParam::User(ChatCompletionUserParam {
                 //     content: Text("What is the capital of the United States?".to_string()),
                 //     name: None,
                 // }),
-                ChatCompletionMessageParam::User(ChatCompletionUserParam {
+                ChatCompletionMessageParam::User{
                     content: Multiple(vec![
                         ChatCompletionContentPart::Text{ text: "What happened to my car?".to_string() },
                         Image {
@@ -366,7 +366,7 @@ mod tests {
                         },
                     ]),
                     name: None,
-                }),
+                },
             ],
             ..Default::default()
         }).await;
@@ -411,11 +411,11 @@ mod tests {
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
             model: ChatModel::Gpt4o.into(),
             messages: vec![
-                ChatCompletionMessageParam::System(ChatCompletionSystemParam {
+                ChatCompletionMessageParam::System{
                     content: "You are a helpful assistant.".to_string(),
                     name: None,
-                }),
-                ChatCompletionMessageParam::User(ChatCompletionUserParam {
+                },
+                ChatCompletionMessageParam::User{
                     content: Multiple(vec![Image {
                         image_url: ImageURL {
                             url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
@@ -423,7 +423,7 @@ mod tests {
                         }
                     }]),
                     name: None,
-                }),
+                },
             ],
             ..Default::default()
         }).await;
