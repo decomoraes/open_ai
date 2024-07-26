@@ -188,8 +188,8 @@ impl APIClient {
 
             let request_builder = {
                 let body = match &opts.body {
-                    Some(body) => body,
-                    None => &Req::default(),
+                    Some(body) => body.clone(),
+                    None => Req::default(),
                 };
                 let body_as_str = serde_json::to_string(&body)?;
                 // request_builder.json(body)

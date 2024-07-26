@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.7"
+crab_ai = "0.1.8"
 ```
 
 ## Usage
@@ -27,8 +27,8 @@ The full API of this library can be found in the documentation.
 ```rust
 use crab_ai::{OpenAI, ClientOptions};
 use crab_ai::resources::chat::{ChatCompletionContent::{Multiple, Text},
-    ChatCompletionContentPart::Image, ChatCompletionCreateParams, ImageURL,
-    ChatCompletionMessageParam::{Assistant, System, User}, Detail,
+    ChatCompletionContentPart::Image, ChatCompletionCreateParams, Detail,
+    ChatCompletionMessageParam::{Assistant, System, User}, ImageURL,
 };
 
 #[tokio::main]
@@ -36,13 +36,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-        model: "gpt-4o-mini",
-        messages: vec![
-            System{ content: "You are a helpful assistant.", name: None },
-            User{ content: Text("What is the capital of the United States?"), name: None },
+        messages: vec![System{ content: "You are a helpful assistant.", name: None },
+            User{ content: Text("Who won the world series in 2020?"), name: None },
             Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020."), name: None, tool_calls: None },
-            User{ content: Text("Where was it played?"), name: None },
-        ],
+            User{ content: Text("Where was it played?"), name: None }],
+        model: "gpt-4o-mini",
         ..Default::default()
     }).await?;
 

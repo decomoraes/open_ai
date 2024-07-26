@@ -349,7 +349,7 @@ mod tests {
             model: "gpt-4o-mini",
             messages: vec![
                 ChatCompletionMessageParam::System{ content: "You are a helpful assistant.", name: None },
-                ChatCompletionMessageParam::User{ content: Text("What is the capital of the United States?"), name: None },
+                ChatCompletionMessageParam::User{ content: Text("Who won the world series in 2020?"), name: None },
                 ChatCompletionMessageParam::Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020."), name: None, tool_calls: None },
                 ChatCompletionMessageParam::User{ content: Text("Where was it played?"), name: None },
                 // ChatCompletionMessageParam::User{
