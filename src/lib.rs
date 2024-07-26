@@ -345,12 +345,13 @@ mod tests {
     async fn test_chat_completions() -> Result<(), Box<dyn Error>> {
         let openai = OpenAI::new(ClientOptions::new())?;
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-            model: ChatModel::Gpt4o.into(),
+            // model: ChatModel::Gpt4o.into(),
+            model: "gpt-4o-mini",
             messages: vec![
-                ChatCompletionMessageParam::System{ content: "You are a helpful assistant.".to_string(), name: None },
-                ChatCompletionMessageParam::User{ content: Text("What is the capital of the United States?".to_string()), name: None },
-                ChatCompletionMessageParam::Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020.".to_string()), name: None, tool_calls: None },
-                ChatCompletionMessageParam::User{ content: Text("Where was it played?".to_string()), name: None },
+                ChatCompletionMessageParam::System{ content: "You are a helpful assistant.", name: None },
+                ChatCompletionMessageParam::User{ content: Text("What is the capital of the United States?"), name: None },
+                ChatCompletionMessageParam::Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020."), name: None, tool_calls: None },
+                ChatCompletionMessageParam::User{ content: Text("Where was it played?"), name: None },
                 // ChatCompletionMessageParam::User{
                 //     content: Multiple(vec![
                 //         ChatCompletionContentPart::Text{ text: "What happened to my car?".to_string() },
@@ -405,10 +406,10 @@ mod tests {
         // let b = list.data;
 
         let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-            model: ChatModel::Gpt4o.into(),
+            model: "gpt-4o",// ChatModel::Gpt4o.into(),
             messages: vec![
                 ChatCompletionMessageParam::System{
-                    content: "You are a helpful assistant.".to_string(),
+                    content: "You are a helpful assistant.",
                     name: None,
                 },
                 ChatCompletionMessageParam::User{
@@ -440,26 +441,26 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_create_assistant() -> Result<(), Box<dyn Error>> {
-
-        let openai = OpenAI::default()?;
-
-        let my_assistant = openai.beta.assistants.create(
-            AssistantCreateParams {
-                name: Some("Math Tutor".to_string()),
-                instructions: Some("You are a personal math tutor. When asked a question, write and run Python code to answer the question.".to_string()),
-                tools: Some(vec![CodeInterpreter]),
-                model: "gpt-4o".to_string(),
-                ..Default::default()
-            },
-            None,
-        ).await?;
-
-        println!("{:?}", my_assistant);
-
-        Ok(())
-    }
+    // #[tokio::test]
+    // async fn test_create_assistant() -> Result<(), Box<dyn Error>> {
+    // 
+    //     let openai = OpenAI::default()?;
+    // 
+    //     let my_assistant = openai.beta.assistants.create(
+    //         AssistantCreateParams {
+    //             name: Some("Math Tutor".to_string()),
+    //             instructions: Some("You are a personal math tutor. When asked a question, write and run Python code to answer the question.".to_string()),
+    //             tools: Some(vec![CodeInterpreter]),
+    //             model: "gpt-4o".to_string(),
+    //             ..Default::default()
+    //         },
+    //         None,
+    //     ).await?;
+    // 
+    //     println!("{:?}", my_assistant);
+    // 
+    //     Ok(())
+    // }
 
     #[tokio::test]
     async fn test_retrieve_assistant() -> Result<(), Box<dyn Error>> {

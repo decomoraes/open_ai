@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.6"
+crab_ai = "0.1.7"
 ```
 
 ## Usage
@@ -26,9 +26,9 @@ The full API of this library can be found in the documentation.
 
 ```rust
 use crab_ai::{OpenAI, ClientOptions};
-use crab_ai::resources::chat::{ChatCompletionContent::{Multiple, Text}, Detail,
+use crab_ai::resources::chat::{ChatCompletionContent::{Multiple, Text},
     ChatCompletionContentPart::Image, ChatCompletionCreateParams, ImageURL,
-    ChatCompletionMessageParam::{Assistant, System, User}, ChatModel::Gpt4o,
+    ChatCompletionMessageParam::{Assistant, System, User}, Detail,
 };
 
 #[tokio::main]
@@ -36,12 +36,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-        model: Gpt4o.into(),
+        model: "gpt-4o-mini",
         messages: vec![
-            System{ content: "You are a helpful assistant.".to_string(), name: None },
-            User{ content: Text("What is the capital of the United States?".to_string()), name: None },
-            Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020.".to_string()), name: None, tool_calls: None },
-            User{ content: Text("Where was it played?".to_string()), name: None },
+            System{ content: "You are a helpful assistant.", name: None },
+            User{ content: Text("What is the capital of the United States?"), name: None },
+            Assistant{ content: Some("The Los Angeles Dodgers won the World Series in 2020."), name: None, tool_calls: None },
+            User{ content: Text("Where was it played?"), name: None },
         ],
         ..Default::default()
     }).await?;

@@ -1,6 +1,6 @@
 [package]
 name = "crab_ai"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["André de Moraes <deco.moraes@icloud.com>"]
 readme = "README.md"
 license = "MIT"
