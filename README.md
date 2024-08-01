@@ -1,15 +1,15 @@
-# Crab AI
+# OpenAI
 
-[![Crates.io](https://img.shields.io/crates/v/crab_ai.svg)](https://crates.io/crates/crab_ai)
-[![Documentation](https://docs.rs/crab_ai/badge.svg)](https://docs.rs/crab_ai)
+[![Crates.io](https://img.shields.io/crates/v/open_ai.svg)](https://crates.io/crates/open_ai)
+[![Documentation](https://docs.rs/open_ai/badge.svg)](https://docs.rs/open_ai)
 
-The Crab AI library provides convenient access to the OpenAI REST API from any Rust application. This library aims to follow the implementation of the official OpenAI SDKs for Python and Node.js as closely as possible. However, it is unofficial and not maintained by OpenAI.
+The OpenAI library provides convenient access to the OpenAI REST API from any Rust application. This library aims to follow the implementation of the official OpenAI SDKs for Python and Node.js as closely as possible. However, it is unofficial and not maintained by OpenAI.
 
 **Note:** This project is still under development, should not be used in production, and many aspects of the structure may change.
 
 ## Documentation
 
-The REST API documentation can be found on [platform.openai.com](https://platform.openai.com/docs). The full API of this library can be found in [docs.rs](https://docs.rs/crab_ai).
+The REST API documentation can be found on [platform.openai.com](https://platform.openai.com/docs). The full API of this library can be found in [docs.rs](https://docs.rs/open_ai).
 
 ## Installation
 
@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-crab_ai = "0.1.9"
+open_ai = "0.1.2"
 ```
 
 ## Usage
@@ -25,8 +25,8 @@ crab_ai = "0.1.9"
 The full API of this library can be found in the documentation.
 
 ```rust
-use crab_ai::{OpenAI, ClientOptions};
-use crab_ai::resources::chat::{ChatCompletionContent::{Multiple, Text},
+use open_ai::{OpenAI, ClientOptions};
+use open_ai::resources::chat::{ChatCompletionContent::{Multiple, Text},
     ChatCompletionContentPart::Image, ChatCompletionCreateParams, Detail,
     ChatCompletionMessageParam::{Assistant, System, User}, ImageURL,
 };
@@ -53,7 +53,7 @@ While you can provide an `api_key` directly, we recommend using environment vari
 
 ### Examples
 
-Refer to the [examples](https://github.com/decomoraes/crab_ai/tree/main/examples) directory for usage examples.
+Refer to the [examples](https://github.com/decomoraes/open_ai/tree/main/examples) directory for usage examples.
 
 ### OpenAI Assistant Beta
 
