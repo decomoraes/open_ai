@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::resource::{APIResource};
 use crate::core::{self, APIClient, FinalRequestOptions, Headers, RequestOptions};
+use crate::core::streaming::APIFuture;
 use crate::resources::beta::assistants as assistants_api;
 use crate::resources::beta::shared;
 use crate::resources::beta::threads::messages as messages_api;
@@ -27,11 +28,11 @@ impl Assistants {
     }
 
     /// Create an assistant with a model and instructions.
-    pub async fn create(
+    pub fn create(
         &self,
         body: AssistantCreateParams,
         options: Option<RequestOptions<AssistantCreateParams>>,
-    ) -> Result<Assistant, Box<dyn Error>> {
+    ) -> APIFuture<AssistantCreateParams, Assistant, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = &options {
@@ -42,22 +43,22 @@ impl Assistants {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             "/assistants",
             Some(RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Retrieves an assistant.
-    pub async fn retrieve(
+    pub fn retrieve(
         &self,
         assistant_id: &str,
         options: Option<RequestOptions<()>>,
-    ) -> Result<Assistant, Box<dyn Error>> {
+    ) -> APIFuture<(), Assistant, ()> {
         let mut headers: Headers = HashMap::new();
         // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
@@ -68,13 +69,14 @@ impl Assistants {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().get(
+
+        self.client.clone().unwrap().lock().unwrap().get(
             &format!("/assistants/{assistant_id}"),
             Some(RequestOptions::<()> {
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     /// Modifies an assistant.
@@ -89,12 +91,12 @@ impl Assistants {
     // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
     // });
     // }
-    pub async fn update(
+    pub fn update(
         &self,
         assistant_id: &str,
         body: AssistantUpdateParams,
         options: Option<RequestOptions<AssistantUpdateParams>>,
-    ) -> Result<Assistant, Box<dyn Error>> {
+    ) -> APIFuture<AssistantUpdateParams, Assistant, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = options {
@@ -105,14 +107,14 @@ impl Assistants {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/assistants/{assistant_id}"),
             Some(RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     /// Returns a list of assistants.
@@ -125,14 +127,14 @@ impl Assistants {
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
 
         let page_constructor = |
-            client: Rc<RefCell<APIClient>>,
+            client: APIResource,
             body: CursorPageResponse<Assistant>,
             options: FinalRequestOptions<AssistantListParams>,
         | {
             CursorPage::new(client, body, options)
         };
 
-        self.client.as_ref().unwrap().borrow().get_api_list(
+        self.client.clone().unwrap().lock().unwrap().get_api_list(
             "/assistants",
             page_constructor,
             Some(RequestOptions {
@@ -144,11 +146,11 @@ impl Assistants {
     }
 
     /// Delete an assistant.
-    pub async fn del(
+    pub fn del(
         &self,
         assistant_id: &str,
         options: Option<RequestOptions<()>>,
-    ) -> Result<AssistantDeleted, Box<dyn Error>> {
+    ) -> APIFuture<(), AssistantDeleted, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
 
@@ -160,13 +162,13 @@ impl Assistants {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().delete(
+        self.client.clone().unwrap().lock().unwrap().delete(
             &format!("/assistants/{assistant_id}"),
             Some(RequestOptions::<()> {
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 }
 

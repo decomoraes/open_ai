@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
 use std::rc::Rc;
+use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::resource::APIResource;
@@ -16,6 +17,7 @@ use crate::resources::beta::threads::runs::runs;
 use crate::{OpenAI, OpenAIObject, streaming};
 use crate::core;
 use crate::core::{APIClient, Headers};
+use crate::core::streaming::APIFuture;
 // use crate::streaming::Stream; // from '../../../streaming';
 
 #[derive(Debug, Clone)]
@@ -41,28 +43,29 @@ impl Threads {
     }
 
     /// Create a thread.
-    pub async fn create(&self, body: ThreadCreateParams) -> Result<Thread, Box<dyn Error>> {
+    pub fn create<'a>(&self, body: ThreadCreateParams) -> APIFuture<ThreadCreateParams, Thread, Thread> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
-        self.client.as_ref().unwrap().borrow().post(
+
+        self.client.clone().unwrap().lock().unwrap().post(
             "/threads",
             Some(core::RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     /// Retrieves a thread.
-    pub async fn retrieve(
+    pub fn retrieve(
         &self,
         thread_id: &str,
         options: Option<core::RequestOptions<()>>,
-    ) -> Result<Thread, Box<dyn Error>> {
+    ) -> APIFuture<String, Thread, ()> {
         let mut headers: Headers = HashMap::new();
-        // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
+
         if let Some(opts) = options {
             if let Some(hdrs) = opts.headers {
                 for (key, value) in hdrs {
@@ -70,23 +73,24 @@ impl Threads {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().get(
+
+        self.client.clone().unwrap().clone().lock().unwrap().get(
             &format!("/threads/{thread_id}"),
             Some(core::RequestOptions {
-                body: Some(thread_id),
+                body: Some(thread_id.to_string()),
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     /// Modifies a thread.
-    pub async fn update(
+    pub fn update(
         &self,
         thread_id: &str,
         body: ThreadUpdateParams,
         options: Option<core::RequestOptions<ThreadUpdateParams>>,
-    ) -> Result<Thread, Box<dyn Error>> {
+    ) -> APIFuture<ThreadUpdateParams, Thread, ()> {
         let mut headers: Headers = HashMap::new();
         // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
@@ -97,22 +101,23 @@ impl Threads {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().post(
+
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}"),
             Some(core::RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     /// Delete a thread.
-    pub async fn del(
+    pub fn del(
         &self,
         thread_id: &str,
         options: Option<core::RequestOptions<()>>,
-    ) -> Result<Thread, Box<dyn Error>> {
+    ) -> APIFuture<(), Thread, ()> {
         let mut headers: Headers = HashMap::new();
         // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
@@ -123,13 +128,13 @@ impl Threads {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().delete(
+        self.client.clone().unwrap().lock().unwrap().delete(
             &format!("/threads/{thread_id}"),
             Some(core::RequestOptions::<()> {
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     // createAndRun(
@@ -155,11 +160,11 @@ impl Threads {
     //     stream: body.stream ?? false,
     // }) as APIPromise<RunsAPI.Run> | APIPromise<Stream<assistants_api::AssistantStreamEvent>>,
     /// Create a thread and run it in one request.
-    pub async fn create_and_run(
+    pub fn create_and_run(
         &self,
         body: ThreadCreateAndRunParams,
         options: Option<core::RequestOptions<ThreadCreateAndRunParams>>,
-    ) -> Result<runs_api::Run, Box<dyn Error>> {
+    ) -> APIFuture<ThreadCreateAndRunParams, Thread, ()> {
         let stream = body.stream.unwrap_or(false);
         let mut headers: Headers = HashMap::new();
         // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
@@ -171,7 +176,8 @@ impl Threads {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().post(
+
+        self.client.clone().unwrap().lock().unwrap().post(
             "/threads/runs",
             Some(core::RequestOptions {
                 body: Some(body),
@@ -179,7 +185,7 @@ impl Threads {
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     // /// A helper to create a thread, start a run and then poll for a terminal state.

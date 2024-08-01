@@ -1,5 +1,5 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use crate::core::APIClient;
 
-pub type APIResource = Rc<RefCell<APIClient>>;
+// pub type APIResource = Rc<RefCell<APIClient>>;
+pub type APIResource = Arc<Mutex<APIClient>>;

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::resource::{APIResource};
 use crate::core::{self, APIClient, FinalRequestOptions, Headers, RequestOptions};
+use crate::core::streaming::APIFuture;
 use crate::resources::beta::assistants as assistants_api;
 use crate::pagination::{CursorPage, CursorPageResponse, Page};
 use crate::resources::chat::ChatCompletionContentPart;
@@ -23,12 +24,12 @@ impl Messages {
     }
 
     /// Create a message.
-    pub async fn create(
+    pub fn create(
         &self,
         thread_id: &str,
         body: MessageCreateParams,
         options: Option<RequestOptions<MessageCreateParams>>,
-    ) -> Result<Message, Box<dyn Error>> {
+    ) -> APIFuture<MessageCreateParams, Message, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = &options {
@@ -39,30 +40,30 @@ impl Messages {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/messages"),
             Some(RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Retrieve a message.
-    pub async fn retrieve(
+    pub fn retrieve(
         &self,
         thread_id: &str,
         message_id: &str,
-        _options: Option<core::RequestOptions<()>>,
-    ) -> Result<Message, Box<dyn Error>> {
-        self.client.as_ref().unwrap().borrow().post(
+        _options: Option<RequestOptions<()>>,
+    ) -> APIFuture<(), Message, ()> {
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/messages/{message_id}"),
-            Some(core::RequestOptions::<()> {
+            Some(RequestOptions::<()> {
                 ..Default::default()
                 // ..options
             }),
-        ).await
+        )
     }
 
     // retrieve(threadId: string, messageId: string, options: Option<Core.RequestOptions): Core.APIPromise<Message> {>,
@@ -73,20 +74,20 @@ impl Messages {
     // }
 
     /// Modifies a message.
-    pub async fn update(
+    pub fn update(
         &self,
         thread_id: &str,
         message_id: &str,
         body: MessageUpdateParams,
-        _options: Option<core::RequestOptions<MessageUpdateParams>>,
-    ) -> Result<Message, Box<dyn Error>> {
-        self.client.as_ref().unwrap().borrow().post(
+        _options: Option<RequestOptions<MessageUpdateParams>>,
+    ) -> APIFuture<MessageUpdateParams, Message, ()> {
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/messages/{message_id}"),
-            Some(core::RequestOptions {
+            Some(RequestOptions {
                 body: Some(body),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     // update(
@@ -113,14 +114,14 @@ impl Messages {
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
 
         let page_constructor = |
-            client: Rc<RefCell<APIClient>>,
+            client: APIResource,
             body: CursorPageResponse<Message>,
             options: FinalRequestOptions<MessageListParams>,
         | {
             CursorPage::new(client, body, options)
         };
 
-        self.client.as_ref().unwrap().borrow().get_api_list(
+        self.client.clone().unwrap().lock().unwrap().get_api_list(
             &format!("/threads/{thread_id}/messages"),
             page_constructor,
             Some(RequestOptions {
@@ -153,14 +154,14 @@ impl Messages {
     //   }
 
     /// Deletes a message.
-    pub async fn del(
+    pub fn del(
         &self,
         thread_id: &str,
         message_id: &str,
         options: Option<core::RequestOptions>,
-    ) -> Result<MessageDeleted, Box<dyn Error>> {
+    ) -> APIFuture<(), MessageDeleted, ()> {
         let mut headers: Headers = HashMap::new();
-        // headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = options {
             if let Some(hdrs) = opts.headers {
@@ -169,13 +170,14 @@ impl Messages {
                 }
             }
         }
-        self.client.as_ref().unwrap().borrow().delete(
+
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/messages/{message_id}"),
             Some(core::RequestOptions::<()> {
                 headers: Some(headers),
                 ..Default::default()
             }),
-        ).await
+        )
     }
 
     // del(threadId: string, messageId: string, options: Option<Core.RequestOptions): Core.APIPromise<MessageDeleted> {>,
@@ -629,10 +631,10 @@ pub enum MessageContent {
     Text{ text: Text },
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ChatCompletionContent {
+#[serde(untagged, bound(deserialize = "'de: 'a"))]
+pub enum ChatCompletionContent<'a> {
     Text(String),
-    Multiple(Vec<ChatCompletionContentPart>),
+    Multiple(Vec<ChatCompletionContentPart<'a>>),
 }
 
 impl Default for MessageContent {
@@ -644,9 +646,10 @@ impl Default for MessageContent {
 /// References an image [File](https://platform.openai.com/docs/api-reference/files)
 /// in the content of a message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged, rename_all = "snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum MessageContentDelta {
     ImageFileDeltaBlock(ImageFileDeltaBlock),
+    #[serde(rename = "text")]
     TextDeltaBlock(TextDeltaBlock),
     ImageURLDeltaBlock(ImageURLDeltaBlock),
 }
@@ -675,11 +678,11 @@ pub mod message_deleted {
 pub struct MessageDelta {
     /// The content of the message in array of text and/or images.
     #[serde(skip_serializing_if = "Option::is_none")]
-    content: Option<Vec<MessageContentDelta>>,
+    pub content: Option<Vec<MessageContentDelta>>,
 
     /// The entity that produced the message. One of `user` or `assistant`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    role: Option<message_deleted::Object>,
+    pub role: Option<message_deleted::Object>,
 }
 
 pub mod message_delta {
@@ -712,7 +715,7 @@ pub mod message_delta_event {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Object {
         #[serde(rename = "thread.message.delta")]
         #[default]
@@ -764,11 +767,11 @@ pub mod text_content_block_param {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct TextDelta {
     #[serde(skip_serializing_if = "Option::is_none")]
-    annotations: Option<Vec<AnnotationDelta>>,
+    pub annotations: Option<Vec<AnnotationDelta>>,
 
     /// The data that makes up the text.
     #[serde(skip_serializing_if = "Option::is_none")]
-    value: Option<String>,
+    pub value: Option<String>,
 }
 
 /// The text content that is part of a message.
@@ -777,9 +780,9 @@ pub struct TextDeltaBlock {
     /// The index of the content part in the message.
     pub index: u32,
 
-    /// Always `text`.
-    #[serde(rename = "type")]
-    pub kind: text_delta_block::Type,
+    // /// Always `text`.
+    // #[serde(rename = "type")]
+    // pub kind: Option<text_delta_block::Type>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<TextDelta>,

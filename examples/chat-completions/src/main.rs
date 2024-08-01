@@ -1,12 +1,9 @@
-use crab_ai::resources::chat::{
-    ChatCompletionContent::Multiple,
-    ChatCompletionContentPart::Image,
+use open_ai::resources::chat::{
+    ChatCompletionContent::Text,
     ChatCompletionCreateParams,
-    ChatCompletionMessageParam::{System, User},
-    ChatModel::Gpt4o,
-    Detail, ImageURL,
+    ChatCompletionMessageParam::{Assistant, System, User},
 };
-use crab_ai::{ClientOptions, OpenAI};
+use open_ai::{ClientOptions, OpenAI};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,25 +13,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let openai = OpenAI::new(ClientOptions::new())?;
 
     let completion = openai.chat.completions.create(ChatCompletionCreateParams {
-        model: Gpt4o.into(),
-        messages: vec![
-            System{
-                content: "You are a helpful assistant.".to_string(),
-                name: None,
-            },
-            User{
-                content: Multiple(vec![Image {
-                    image_url: ImageURL {
-                        url: "https://inovaveterinaria.com.br/wp-content/uploads/2015/04/gato-sem-raca-INOVA-2048x1365.jpg".to_string(),
-                        detail: Some(Detail::Auto),
-                    }
-                }]),
-                name: None,
-            },
-        ],
-        ..Default::default()
-    }).await?;
+            model: "gpt-4o-mini",
+            messages: vec![
+                System { content: "You are a helpful assistant.", name: None },
+                User { content: Text("Who won the world series in 2020?"), name: None },
+                Assistant { content: Some("The Los Angeles Dodgers won the World Series in 2020."), name: None, tool_calls: None },
+                User { content: Text("Where was it played?"), name: None },
+            ],
+            ..Default::default()
+        }).await?;
 
-    println!("{:?}", completion);
+    println!("{:?}", completion.choices.first().unwrap().message.content);
+    // Some("The 2020 World Series was played at Globe Life Field in Arlington, Texas. It
+    // was held at a neutral site due to the COVID-19 pandemic.")
+
+    
     Ok(())
 }

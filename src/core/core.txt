@@ -7,13 +7,10 @@ use std::error::Error;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-// use futures::executor::block_on;
 use serde_json::Value;
 use tokio::time::sleep;
 use crate::pagination::{Page, CursorPage, CursorPageResponse};
 pub use crate::core::request_options::*;
-use crate::core::streaming::{APIFuture, APIFutureState};
-use crate::resource::APIResource;
 
 pub type APIPromise<T> = tokio::task::JoinHandle<Result<T, Box<dyn Error>>>;
 
@@ -83,55 +80,37 @@ impl APIClient {
 
         headers
     }
-    
-    pub fn get<
-        'a,
-        Req: Default + Clone + Serialize,
-        ItemNonStreaming: 'static + for<'de> Deserialize<'de>,
-        ItemStreaming: 'static + for<'de> Deserialize<'de>
-    >(
-        &'a self,
+
+    pub async fn get<Req: Default + Clone + Serialize, Rsp: for<'de> Deserialize<'de>>(
+        &self,
         path: &str,
         opts: Option<RequestOptions<Req>>,
-    // ) -> Result<Rsp, Box<dyn Error>> {
-    ) -> APIFuture<Req, ItemNonStreaming, ItemStreaming> {
-        self.method_request(Method::GET, path, opts)
+    ) -> Result<Rsp, Box<dyn Error>> {
+        self.method_request(Method::GET, path, opts).await
     }
 
-    pub fn post<
-        'a,
-        Req: Default + Clone + Serialize,
-        ItemNonStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-        ItemStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-    >(
-        &'a self,
+    pub async fn post<Req: Default + Clone + Serialize, Rsp: for<'de> Deserialize<'de>>(
+        &self,
         path: &str,
         opts: Option<RequestOptions<Req>>,
-    // ) -> Result<Rsp, Box<dyn Error>> {
-    ) -> APIFuture<Req, ItemNonStreaming, ItemStreaming> {
-        self.method_request(Method::POST, path, opts)
+    ) -> Result<Rsp, Box<dyn Error>> {
+        self.method_request(Method::POST, path, opts).await
     }
 
-    pub fn delete<
-        'a,
-        Req: Default + Clone + Serialize,
-        ItemNonStreaming: 'static + for<'de> Deserialize<'de>,
-        ItemStreaming: 'static + for<'de> Deserialize<'de>,
-    >(
-        &'a self,
+    pub async fn delete<Req: Default + Clone + Serialize, Rsp: for<'de> Deserialize<'de>>(
+        &self,
         path: &str,
         opts: Option<RequestOptions<Req>>,
-    // ) -> Result<Rsp, Box<dyn Error>> {
-    ) -> APIFuture<Req, ItemNonStreaming, ItemStreaming> {
-            self.method_request(Method::DELETE, path, opts)
+    ) -> Result<Rsp, Box<dyn Error>> {
+        self.method_request(Method::DELETE, path, opts).await
     }
 
-    pub async fn get_api_list<Req: Default + Clone + Serialize, Item: 'static + for<'de> Deserialize<'de> + Clone>(
+    pub async fn get_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone>(
         &self,
         path: &str,
         // Page: new (...args: any[]) => PageImpl,
         page: impl FnOnce(
-            APIResource,
+            Rc<RefCell<APIClient>>,
             CursorPageResponse<Item>,
             FinalRequestOptions<Req>,
         ) -> CursorPage<Req, Item>,
@@ -141,11 +120,11 @@ impl APIClient {
         self.request_api_list::<Req, Item>(page, opts).await
     }
 
-    pub async fn request_api_list<Req: Default + Clone + Serialize, Item: 'static + for<'de> Deserialize<'de> + Clone /*, PageImpl: Page<Req, Item> */>(
+    pub async fn request_api_list<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone /*, PageImpl: Page<Req, Item> */>(
         &self,
         // Page: new (...args: ConstructorParameters<typeof Page>) => PageClass,
         page: impl FnOnce(
-            APIResource,
+            Rc<RefCell<APIClient>>,
             CursorPageResponse<Item>,
             FinalRequestOptions<Req>,
         ) -> CursorPage<Req, Item>,
@@ -158,16 +137,14 @@ impl APIClient {
         request
     }
 
-    async fn make_request<Req: Default + Clone + Serialize, Item: 'static + for<'de> Deserialize<'de> + Clone>(
+    async fn make_request<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone>(
         &self,
         opts: FinalRequestOptions<Req>,
         retries_remaining: Option<()>
     ) -> Result<CursorPage<Req, Item>, Box<dyn Error>> {
-        let api_future = self.request::<Req, CursorPageResponse<Item>, String>(opts.clone());
-        let response = api_future.await?;
+        let response = self.request::<Req, CursorPageResponse<Item>>(opts.clone()).await?;
         let cursor_page = CursorPage::new(
-            // Rc::new(RefCell::new(self.clone())),
-            Arc::new(Mutex::new(self.clone())),
+            Rc::new(RefCell::new(self.clone())),
             // reqwest::Response::from(),
             response,
             opts,
@@ -176,153 +153,92 @@ impl APIClient {
         Ok(cursor_page)
     }
 
-    fn method_request<
-        'a,
-        Req: Default + Clone + Serialize,
-        ItemNonStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-        ItemStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-    >(
-        &'a self,
+    async fn method_request<Req: Default + Clone + Serialize, Rsp: for<'de> Deserialize<'de>>(
+        &self,
         method: Method,
         path: &str,
         opts: Option<RequestOptions<Req>>,
-    // ) -> Result<Rsp, Box<dyn Error>> {
-    ) -> APIFuture<Req, ItemNonStreaming, ItemStreaming> {
+    ) -> Result<Rsp, Box<dyn Error>> {
         let opts: FinalRequestOptions<Req> = FinalRequestOptions::new(&method, path, opts.unwrap_or_default());
-        self.request(opts)
+        self.request(opts).await
     }
 
-    pub fn request<
-        'a,
-        Req: Default + Clone + Serialize,
-        ItemNonStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-        ItemStreaming: 'a + for<'de> Deserialize<'de> + 'static,
-    >(
-        &'a self,
+    async fn request<Req: Default + Clone + Serialize, Rsp: for<'de> Deserialize<'de>>(
+        &self,
         opts: FinalRequestOptions<Req>,
-    ) -> APIFuture<Req, ItemNonStreaming, ItemStreaming> {
-        let url = format!("{}{}", self.base_url, opts.path);
-        // let request_builder = self.client.request(opts.method.clone(), &url);
+    ) -> Result<Rsp, Box<dyn Error>> {
+        let url = format!("{}/{}", self.base_url, opts.path);
+        let mut retries_remaining = self.max_retries;
+        let mut delay = Duration::from_millis(500);
 
-        // if opts.stream.clone().unwrap_or(false) {
-        // let api_future = APIFuture::<Req, Rsp> {
-        //     client: self.clone(),
-        //     request: Some(request_builder),
-        //     state: APIFutureState::Init,
-        //     request_options: opts,
-        // };
-        //
-        // return api_future;
-        // }
+        loop {
+            let request_builder = self.client.request(opts.method.clone(), &url);
 
-        // let url = format!("{}/{}", self.base_url, opts.path);
-        // let mut retries_remaining = self.max_retries;
-        // let mut delay = Duration::from_millis(500);
-        //
-        // loop {
-        let request_builder = self.client.request(opts.method.clone(), &url);
+            // begin
+            let headers = self.default_headers(&opts);
 
-        // begin
-        let headers = self.default_headers(&opts);
+            let request_builder = headers.into_iter().fold(request_builder, |rb, (key, value)| {
+                if let Some(value) = value {
+                    rb.header(&key, value)
+                } else {
+                    rb
+                }
+            });
+            // end
 
-        let request_builder = headers.into_iter().fold(request_builder, |rb, (key, value)| {
-            if let Some(value) = value {
-                rb.header(&key, value)
-            } else {
-                rb
-            }
-        });
-        // end
-
-        let request_builder = {
-            let body = match &opts.body {
-                Some(body) => body.clone(),
-                None => Req::default(),
+            let request_builder = {
+                let body = match &opts.body {
+                    Some(body) => body.clone(),
+                    None => Req::default(),
+                };
+                let body_as_str = serde_json::to_string(&body)?;
+                // request_builder.json(body)
+                if opts.method != Method::GET && opts.body.is_some() {
+                    request_builder.body(body_as_str)
+                } else {
+                    request_builder
+                }
             };
-            let body_as_str = serde_json::to_string(&body).unwrap(); // ?;
-            // request_builder.json(body)
-            if opts.method != Method::GET && opts.body.is_some() {
-                request_builder.body(body_as_str)
-            } else {
-                request_builder
+
+            let request = request_builder.build()?;
+
+            let response = self.client.execute(request).await;
+
+            match response {
+                Ok(resp) if resp.status().is_success() => {
+                    let string_response = resp.text().await?;
+                    let str = string_response;
+                    let parsed_response = serde_json::from_str(&str)?;
+                    // let parsed_response = resp.json::<Rsp>().await?;
+                    return Ok(parsed_response);
+                }
+                Ok(resp) => {
+                    if retries_remaining > 0 {
+                        retries_remaining -= 1;
+                        sleep(delay).await;
+                        delay = delay * 2;
+                    } else {
+                        // error with status
+                        // let err = format!("Request failed with status: {}", resp.status());
+                        // error with message
+                        let err = format!("ERROR {}, Request failed: {:?}", resp.status(), resp.text().await);
+                        return Err(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            err,
+                        )));
+                    }
+                }
+                Err(err) => {
+                    if retries_remaining > 0 {
+                        retries_remaining -= 1;
+                        sleep(delay).await;
+                        delay = delay * 2;
+                    } else {
+                        return Err(Box::new(err));
+                    }
+                }
             }
-        };
-
-        let api_future = APIFuture::<Req, ItemNonStreaming, ItemStreaming> {
-            client: self.clone(),
-            request: Some(request_builder),
-            state: APIFutureState::Init,
-            streaming_state: None,
-            request_options: opts,
-        };
-
-        return api_future;
-
-        //
-        //     if opts.stream.clone().unwrap_or(false) {
-        //         let api_future = APIFuture::<Req, Rsp> {
-        //             client: self.clone(),
-        //             request: Some(request_builder),
-        //             state: APIFutureState::Init,
-        //             request_options: opts,
-        //         };
-        //
-        //         return api_future;
-        //     }
-        //
-        //     let request = request_builder.build().unwrap(); // ?;
-        //
-        //     let response = self.client.execute(request).await;
-        //
-        //     match response {
-        //         Ok(resp) if resp.status().is_success() => {
-        //             // let string_response = resp.text().await.unwrap(); // ?;
-        //             let string_response = resp.text().await.unwrap(); // ?;
-        //             let str = string_response;
-        //             let parsed_response = serde_json::from_str(&str).unwrap(); // ?;
-        //             // let parsed_response = resp.json::<Rsp>().await?;
-        //             // return Ok(parsed_response);
-        //
-        //             let api_future = APIFuture {
-        //                 client: self.clone(),
-        //                 request: None,
-        //                 state: APIFutureState::ResponseReceived(Box::pin(async { Ok(parsed_response) })),
-        //                 // state: APIFutureState::ResponseReceived(Ok(parsed_response))),
-        //                 request_options: opts,
-        //             };
-        //             return api_future
-        //         }
-        //         Ok(resp) => {
-        //             if retries_remaining > 0 {
-        //                 retries_remaining -= 1;
-        //                 sleep(delay).await;
-        //                 // block_on(sleep(delay)); // .await;
-        //                 delay = delay * 2;
-        //             } else {
-        //                 // error with status
-        //                 // let err = format!("Request failed with status: {}", resp.status());
-        //                 // error with message
-        //                 let err = format!("ERROR {}, Request failed: {:?}", resp.status(), resp.text().await);
-        //                 // return Err(Box::new(std::io::Error::new(
-        //                 //     std::io::ErrorKind::Other,
-        //                 //     err,
-        //                 // )));
-        //                 panic!("{}", err);
-        //             }
-        //         }
-        //         Err(err) => {
-        //             if retries_remaining > 0 {
-        //                 retries_remaining -= 1;
-        //                 sleep(delay).await;
-        //                 // block_on(sleep(delay)); // .await;
-        //                 delay = delay * 2;
-        //             } else {
-        //                 // return Err(Box::new(err));
-        //                 panic!("{}", err);
-        //             }
-        //         }
-        //     }
-        // }
+        }
     }
 }
 //

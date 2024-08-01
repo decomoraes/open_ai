@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::resource::APIResource;
 use crate::core::{self, APIClient, FinalRequestOptions, Headers};
+use crate::core::streaming::APIFuture;
 use crate::resources::beta::threads::runs::steps as steps_api;
 use crate::pagination::{CursorPage, CursorPageParams, CursorPageResponse, Page};
 
@@ -22,9 +23,10 @@ impl Steps {
         run_id: &str,
         step_id: &str,
         options: Option<core::RequestOptions<()>>,
-    ) -> Result<RunStep, Box<dyn Error>> {
+    ) -> APIFuture<(), RunStep, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
+        
         if let Some(opts) = &options {
             if let Some(hdrs) = &opts.headers {
                 for (key, value) in hdrs {
@@ -32,14 +34,14 @@ impl Steps {
                 }
             }
         }
-        
-        self.client.as_ref().unwrap().borrow().get(
+
+        self.client.clone().unwrap().lock().unwrap().get(
             &format!("/threads/{thread_id}/runs/{run_id}/steps/{step_id}"),
             Some(core::RequestOptions {
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Returns a list of run steps belonging to a run.
@@ -54,14 +56,14 @@ impl Steps {
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
 
         let page_constructor = |
-            client: Rc<RefCell<APIClient>>,
+            client: APIResource,
             body: CursorPageResponse<RunStep>,
             options: FinalRequestOptions<StepListParams>,
         | {
             CursorPage::new(client, body, options)
         };
 
-        self.client.as_ref().unwrap().borrow().get_api_list(
+        self.client.clone().unwrap().lock().unwrap().get_api_list(
             &format!("/threads/{thread_id}/runs/{run_id}/steps"),
             page_constructor,
             Some(core::RequestOptions::<StepListParams> {

@@ -1,6 +1,6 @@
 [package]
-name = "crab_ai"
-version = "0.1.9"
+name = "open_ai"
+version = "0.1.2"
 authors = ["André de Moraes <deco.moraes@icloud.com>"]
 readme = "README.md"
 license = "MIT"
@@ -22,3 +22,4 @@ lazy_static = "1.5.0"
 futures = "0.3.30"
 tokio-stream = "0.1.15"
 struct_iterable = "0.1.1"
+reqwest-eventsource = "0.6.0"

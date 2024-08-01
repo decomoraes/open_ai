@@ -138,11 +138,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use crate::core::{APIClient, FinalRequestOptions, RequestOptions, PageInfo};
 use crate::resource::APIResource;
-use crate::resources::beta::assistants::Assistant;
-use crate::resources::beta::threads::{Run, RunListParams};
+// use crate::resources::beta::assistants::Assistant;
+// use crate::resources::beta::threads::{Run, RunListParams};
 
 pub trait Page<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>>: Sized {
-    fn new(client: Rc<RefCell<APIClient>>, /*response: reqwest::Response,*/ body: CursorPageResponse<Item>, options: FinalRequestOptions<Req>) -> Self;
+    fn new(client: APIResource, /*response: reqwest::Response,*/ body: CursorPageResponse<Item>, options: FinalRequestOptions<Req>) -> Self;
     fn next_page_info(&self) -> Option<PageInfo>;
     fn get_paginated_items(&self) -> Vec<Item>;
     fn has_next_page(&self) -> bool;
@@ -176,7 +176,7 @@ pub struct CursorPageParams {
 #[derive(Debug)]
 pub struct CursorPage<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de>> { // <Item extends { id: string }>
     pub data: Vec<Item>,
-    pub client: Rc<RefCell<APIClient>>,
+    pub client: APIResource,
     pub options: FinalRequestOptions<Req>,
     // pub response: Response,
     pub body: CursorPageResponse<Item>,
@@ -185,9 +185,9 @@ pub struct CursorPage<Req: Default + Clone + Serialize, Item: for<'de> Deseriali
 // extends AbstractPage<Item>
 // implements CursorPageResponse<Item>
 
-impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone> Page<Req, Item> for CursorPage<Req, Item> {
+impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone + 'static> Page<Req, Item> for CursorPage<Req, Item> {
     fn new(
-        client: Rc<RefCell<APIClient>>,
+        client: APIResource,
         // response: reqwest::Response,
         body: CursorPageResponse<Item>,
         options: FinalRequestOptions<Req>,
@@ -269,7 +269,7 @@ impl<Req: Default + Clone + Serialize, Item: for<'de> Deserialize<'de> + Clone> 
             CursorPage::new(client, body, options)
         };
 
-        let result = self.client.as_ref().borrow().request_api_list(page_constructor, next_options).await.unwrap();
+        let result = self.client.clone().lock().unwrap().request_api_list(page_constructor, next_options).await.unwrap();
         
         Ok(result)
     }

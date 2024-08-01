@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use serde::{Deserialize, Serialize};
 use crate::core::RequestOptions;
+use crate::core::streaming::APIFuture;
 use crate::OpenAIObject;
 use crate::resource::APIResource;
 
@@ -17,18 +18,45 @@ impl Completions {
         }
     }
 
-    /// Creates a completion for the provided prompt and parameters.
-    pub async fn create(&self, body: CompletionCreateParams) -> Result<Completion, Box<dyn Error>> {
+    pub fn create(&self, body: CompletionCreateParams) -> APIFuture<CompletionCreateParams, Completion, Completion> {
         let stream = body.stream.unwrap_or(false);
-        self.client.as_ref().unwrap().borrow().post(
+
+        // Use the client stored in the struct
+        let client = self.client.clone().unwrap().clone();
+
+        // Call the post method on the cloned client
+        let result = client.lock().unwrap().post(
             "/completions",
-            Some( RequestOptions {
+            Some(RequestOptions {
                 body: Some(body),
                 stream: Some(stream),
                 ..Default::default()
             })
-        ).await
+        );
+
+        result
+
+        // APIFuture {
+        //     client: &APIClient {},
+        //     request: None,
+        //     state: APIFutureState::Init,
+        //     request_options: FinalRequestOptions {},
+        // }
     }
+
+    // /// Creates a completion for the provided prompt and parameters.
+    // pub async fn create(&'a self, body: CompletionCreateParams) -> APIFuture<'a, CompletionCreateParams, Completion> { // Result<Completion, Box<dyn Error>> {
+    //     let stream = body.stream.unwrap_or(false);
+    //     let client = self.client.as_ref().unwrap().borrow();
+    //     client.post(
+    //         "/completions",
+    //         Some( RequestOptions {
+    //             body: Some(body),
+    //             stream: Some(stream),
+    //             ..Default::default()
+    //         })
+    //     ).await
+    // }
 }
 
 /// Represents a completion response from the API. Note: both the streamed and
@@ -76,7 +104,7 @@ pub struct CompletionChoice {
     /// hit a natural stop point or a provided stop sequence, `length` if the maximum
     /// number of tokens specified in the request was reached, or `content_filter` if
     /// content was omitted due to a flag from our content filters.
-    pub finish_reason: FinishReason,
+    pub finish_reason: Option<FinishReason>,
     pub index: u32,
     pub logprobs: Option<Logprobs>,
     pub text: String,

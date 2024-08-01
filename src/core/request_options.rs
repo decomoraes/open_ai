@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use reqwest::{Client, Method, Request};
-use crate::core::Headers;
+use crate::core::core::Headers;
 
 #[derive(Default, Debug, Clone)]
 pub struct RequestOptions<Req: Default = ()> {

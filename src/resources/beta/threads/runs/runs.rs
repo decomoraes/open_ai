@@ -7,6 +7,7 @@ use tokio::time::sleep;
 use crate::resource::APIResource;
 // use crate::core ::is_request_options;
 use crate::core::{self, FinalRequestOptions, Headers, RequestOptions};
+use crate::core::streaming::APIFuture;
 use crate::library::assistant_stream::{AssistantStream, RunCreateParamsBaseStream, RunSubmitToolOutputsParamsStream};
 use crate::resources::beta::threads::runs::runs as runs_api;
 use crate::resources::beta::assistants as assistants_api;
@@ -29,12 +30,12 @@ impl Runs {
     }
 
     /// Create a run.
-    pub async fn create(
+    pub fn create(
         &self,
         thread_id: &str,
         body: RunCreateParams,
         options: Option<RequestOptions<RunCreateParams>>,
-    ) -> Result<Run, Box<dyn Error>> {
+    ) -> APIFuture<RunCreateParams, Run, ()> {
         let stream = body.stream.unwrap_or(false);
 
         let mut headers: Headers = HashMap::new();
@@ -47,7 +48,7 @@ impl Runs {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/runs"),
             Some(RequestOptions {
                 body: Some(body),
@@ -55,16 +56,16 @@ impl Runs {
                 stream: Some(stream),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Retrieves a run.
-    pub async fn retrieve(
+    pub fn retrieve(
         &self,
         thread_id: &str,
         run_id: &str,
         options: Option<RequestOptions>,
-    ) -> Result<Run, Box<dyn Error>> {
+    ) -> APIFuture<(), Run, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = &options {
@@ -75,23 +76,23 @@ impl Runs {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().get(
+        self.client.clone().unwrap().lock().unwrap().get(
             &format!("/threads/{thread_id}/runs/{run_id}"),
-            Some(core::RequestOptions {
+            Some(RequestOptions {
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Modifies a run.
-    pub async fn update(
+    pub fn update(
         &self,
         thread_id: &str,
         run_id: &str,
         body: RunUpdateParams,
         options: Option<RequestOptions<RunUpdateParams>>,
-    ) -> Result<Run, Box<dyn Error>> {
+    ) -> APIFuture<RunUpdateParams, Run, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
         if let Some(opts) = &options {
@@ -102,14 +103,14 @@ impl Runs {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/runs/{run_id}"),
             Some(RequestOptions {
                 body: Some(body),
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// Returns a list of runs belonging to a thread.
@@ -137,7 +138,7 @@ impl Runs {
             CursorPage::new(client, body, options)
         };
 
-        self.client.as_ref().unwrap().borrow().get_api_list(
+        self.client.clone().unwrap().lock().unwrap().get_api_list(
             &format!("/threads/{thread_id}/runs"),
             page_constructor,
             Some(RequestOptions {
@@ -149,14 +150,15 @@ impl Runs {
     }
 
     /// Cancels a run that is `in_progress`.
-    pub async fn cancel(
+    pub fn cancel(
         &self,
         thread_id: &str,
         run_id: &str,
         options: Option<RequestOptions>,
-    ) -> Result<Run, Box<dyn Error>> {
+    ) -> APIFuture<(), Run, ()> {
         let mut headers: Headers = HashMap::new();
         headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
+
         if let Some(opts) = &options {
             if let Some(hdrs) = &opts.headers {
                 for (key, value) in hdrs {
@@ -165,13 +167,13 @@ impl Runs {
             }
         }
 
-        self.client.as_ref().unwrap().borrow().post(
+        self.client.clone().unwrap().lock().unwrap().post(
             &format!("/threads/{thread_id}/runs/{run_id}/cancel"),
             Some(RequestOptions {
                 headers: Some(headers),
                 ..options.unwrap_or_default()
             }),
-        ).await
+        )
     }
 
     /// A helper to create a run an poll for a terminal state. More information on Run
@@ -260,10 +262,39 @@ impl Runs {
         }
     }
 
-    // /// Create a Run stream
     //   stream(thread_id: string, body: RunCreateParamsBaseStream, options: Option<Core.RequestOptions): AssistantStream >,
     //     return AssistantStream.createAssistantStream(thread_id, this._client.beta.threads.runs, body, options);
     //   }
+
+    /// Create a Run stream
+    pub fn stream(
+        &self,
+        thread_id: &str,
+        body: RunCreateParams,
+        options: Option<RequestOptions<RunCreateParams>>,
+    ) ->  APIFuture<RunCreateParams, (), AssistantStream> {
+        let mut headers: Headers = HashMap::new();
+        headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
+        // headers.insert("Content-Type".to_string(), Some("text/event-stream".to_string()));
+        // headers.insert("Accept".to_string(), Some("text/event-stream".to_string()));
+        if let Some(opts) = &options {
+            if let Some(hdrs) = &opts.headers {
+                for (key, value) in hdrs {
+                    headers.insert(key.to_owned(), value.to_owned());
+                }
+            }
+        }
+
+        self.client.clone().unwrap().lock().unwrap().post(
+            &format!("/threads/{thread_id}/runs"),
+            Some(RequestOptions {
+                body: Some(body),
+                headers: Some(headers),
+                stream: Some(true),
+                ..options.unwrap_or_default()
+            }),
+        )
+    }
 
     // /// When a run has the `status: "requires_action"` and `required_action.type` is
     // /// `submit_tool_outputs`, this endpoint can be used to submit the outputs from the
@@ -765,7 +796,7 @@ pub struct RunCreateParams {
     /// to the user. Specifying a particular tool like `{"type": "file_search"}` or
     /// `{"type": "function", "function": {"name": "my_function"}}` forces the model to
     /// call that tool.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<threads_api::AssistantToolChoiceOption>,
 
     /// Override the tools the assistant can use for this run. This is useful for

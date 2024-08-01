@@ -1,7 +1,41 @@
 use serde::{Deserialize, Serialize};
+use crate::resources::beta::threads::{ImageFile, Message, MessageDelta, MessageDeltaEvent, Run, Text, TextDelta};
+use crate::resources::beta::threads::runs::steps::{RunStep, RunStepDelta, ToolCall, ToolCallDelta};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct AssistantStream {}
+#[serde(rename_all = "snake_case")]
+// pub struct AssistantStream {}
+pub enum AssistantStream {
+    //New event structure
+    MessageCreated(Message),
+    MessageDelta(MessageDeltaEvent), // { message: MessageDelta, snapshot: Message },
+    MessageDone{ message: Message },
+
+    RunStepCreated(RunStep),
+    RunStepDelta{delta: RunStepDelta, snapshot: RunStep},
+    RunStepDone{ run_step: RunStep, snapshot: RunStep },
+
+    ToolCallCreated(ToolCall),
+    ToolCallDelta{delta: ToolCallDelta, snapshot: ToolCall},
+    ToolCallDone(ToolCall),
+
+    TextCreated(Text),
+    TextDelta{ delta: TextDelta, snapshot: Text },
+    TextDone{ content: Text, snapshot: Message },
+
+    // No created or delta as this is not streamed
+    ImageFileDone{ content: ImageFile, snapshot: Message },
+
+    Event, // (AssistantStreamEvent),
+
+    // AbstractAssistantRunnerEvents
+    #[default]
+    Connect,
+    Run(Run),
+    Error, // (OpenAIError),
+    Abort, // (APIUserAbortError),
+    End,
+}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RunCreateParamsBaseStream {}
