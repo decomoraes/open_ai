@@ -245,10 +245,10 @@ pub struct CodeInterpreterToolCallDelta {
     /// The index of the tool call in the tool calls array.
     pub index: u32,
 
-    /// The type of tool call. This is always going to be `code_interpreter` for this
-    /// type of tool call.
-    #[serde(rename = "type")]
-    pub kind: code_interpreter_tool_call_delta::Type,
+    // /// The type of tool call. This is always going to be `code_interpreter` for this
+    // /// type of tool call.
+    // #[serde(rename = "type")]
+    // pub kind: code_interpreter_tool_call_delta::Type,
 
     /// The ID of the tool call.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -327,10 +327,10 @@ pub struct FileSearchToolCallDelta {
     /// The index of the tool call in the tool calls array.
     pub index: u32,
 
-    /// The type of tool call. This is always going to be `file_search` for this type of
-    /// tool call.
-    #[serde(rename = "type")]
-    pub kind: file_search_tool_call_delta::Type,
+    // /// The type of tool call. This is always going to be `file_search` for this type of
+    // /// tool call.
+    // #[serde(rename = "type")]
+    // pub kind: file_search_tool_call_delta::Type,
 
     /// The ID of the tool call object.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -392,17 +392,15 @@ pub struct FunctionToolCallDelta {
     /// The index of the tool call in the tool calls array.
     pub index: u32,
 
-    /// The type of tool call. This is always going to be `function` for this type of
-    /// tool call.
-    #[serde(rename = "type")]
-    pub kind: function_tool_call_delta::Type,
+    // /// The type of tool call. This is always going to be `function` for this type of
+    // /// tool call.
+    // #[serde(rename = "type")]
+    // pub kind: function_tool_call_delta::Type,
 
     /// The ID of the tool call object.
-    #[serde(rename = "type")]
     pub id: Option<String>,
 
     /// The definition of the function that was called.
-    #[serde(rename = "type")]
     pub function: Option<function_tool_call_delta::Function>,
 }
 
@@ -618,15 +616,16 @@ pub mod run_step_delta {
     use super::*;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(tag = "type", rename_all = "snake_case")]
     pub enum StepDetails {
-        RunStepDeltaMessageDelta(RunStepDeltaMessageDelta),
-        ToolCallDeltaObject(ToolCallDeltaObject),
+        #[serde(rename = "message_creation")]
+        RunSteps(RunStepDeltaMessageDelta),
+        ToolCalls(ToolCallDeltaObject),
     }
 
     impl Default for StepDetails {
         fn default() -> Self {
-            StepDetails::RunStepDeltaMessageDelta(Default::default())
+            StepDetails::RunSteps(Default::default())
         }
     }
 }
@@ -649,7 +648,7 @@ pub mod run_step_delta_event {
     use super::*;
 
     #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-    #[serde(untagged, rename_all = "snake_case")]
+    #[serde(rename_all = "snake_case")]
     pub enum Object {
         #[default]
         #[serde(rename = "thread.run.step.delta")]
@@ -660,8 +659,8 @@ pub mod run_step_delta_event {
 /// Details of the message creation by the run step.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RunStepDeltaMessageDelta {
-    /// Always `message_creation`.
-    pub kind: run_step_delta_message_delta::Type,
+    // /// Always `message_creation`.
+    // pub kind: run_step_delta_message_delta::Type,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message_creation: Option<run_step_delta_message_delta::MessageCreation>,
@@ -687,40 +686,40 @@ pub mod run_step_delta_message_delta {
 
 /// Details of the Code Interpreter tool call the run step was involved in.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged, rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum ToolCall {
-    CodeInterpreterToolCall(CodeInterpreterToolCall),
-    FileSearchToolCall(FileSearchToolCall),
-    FunctionToolCall(FunctionToolCall),
+    CodeInterpreter(CodeInterpreterToolCall),
+    FileSearch(FileSearchToolCall),
+    Function(FunctionToolCall),
 }
 
 impl Default for ToolCall {
     fn default() -> Self {
-        ToolCall::CodeInterpreterToolCall(Default::default())
+        ToolCall::CodeInterpreter(Default::default())
     }
 }
 
 /// Details of the Code Interpreter tool call the run step was involved in.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged, rename_all = "snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum ToolCallDelta {
-    CodeInterpreterToolCallDelta(CodeInterpreterToolCallDelta),
-    FileSearchToolCallDelta(FileSearchToolCallDelta),
-    FunctionToolCallDelta(FunctionToolCallDelta),
+    CodeInterpreter(CodeInterpreterToolCallDelta),
+    FileSearch(FileSearchToolCallDelta),
+    Function(FunctionToolCallDelta),
 }
 
 impl Default for ToolCallDelta {
     fn default() -> Self {
-        ToolCallDelta::CodeInterpreterToolCallDelta(Default::default())
+        ToolCallDelta::CodeInterpreter(Default::default())
     }
 }
 
 /// Details of the tool call.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCallDeltaObject {
-    /// Always `tool_calls`.
-    #[serde(rename = "type")]
-    pub kind: tool_call_delta_object::Type,
+    // /// Always `tool_calls`.
+    // #[serde(rename = "type")]
+    // pub kind: tool_call_delta_object::Type,
 
     /// An array of tool calls the run step was involved in. These can be associated
     /// with one of three types of tools: `code_interpreter`, `file_search`, or

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::resources::beta::threads::{ImageFile, Message, MessageDelta, MessageDeltaEvent, Run, Text, TextDelta};
-use crate::resources::beta::threads::runs::steps::{RunStep, RunStepDelta, ToolCall, ToolCallDelta};
+use crate::resources::beta::threads::runs::steps::{RunStep, RunStepDelta, RunStepDeltaEvent, ToolCall, ToolCallDelta};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -16,7 +16,7 @@ pub enum AssistantStream {
     RunStepDone{ run_step: RunStep, snapshot: RunStep },
 
     ToolCallCreated(ToolCall),
-    ToolCallDelta{delta: ToolCallDelta, snapshot: ToolCall},
+    ToolCallDelta(RunStepDeltaEvent), // thread.run.step.delta
     ToolCallDone(ToolCall),
 
     TextCreated(Text),

@@ -718,7 +718,8 @@ mod tests {
             &thread.id,
             MessageCreateParams {
                 role: message_create_params::Role::User,
-                content: message_create_params::Content::Text("I need to solve the equation `3x + 11 = 14`. Can you help me?".to_string()),
+                // content: message_create_params::Content::Text("I need to solve the equation `3x + 11 = 14`. Can you help me?".to_string()),
+                content: message_create_params::Content::Text("What vehicles I have?".to_string()),
                 ..Default::default()
             },
             None,
@@ -774,6 +775,12 @@ mod tests {
                     // if let Some(text) = text {
                     //     print!("{}", text);
                     // }
+                },
+                Ok(AssistantStream::ToolCallDelta(tool_call)) => {
+                    println!("tool_call: {:?}", tool_call);
+                }
+                Ok(AssistantStream::Run(message)) => {
+                    println!("run: {:?}", message);
                 },
                 Err(_) => {
                     println!("Error: {:?}", event);

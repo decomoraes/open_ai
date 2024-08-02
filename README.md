@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-open_ai = "0.1.2"
+open_ai = "0.1.3"
 ```
 
 ## Usage

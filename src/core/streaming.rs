@@ -134,6 +134,16 @@ APIFuture<Req, ItemNonStreaming, ItemStreaming>
                                     let data: Result<ItemStreaming, _> = serde_json::from_str(&enum_data);
                                     return Poll::Ready(Some(data.map_err(|e| e.into())))
                                 },
+                                "thread.run.step.delta" => {
+                                    let enum_data = format!("{{\"tool_call_delta\": {}}}", data);
+                                    let data: Result<ItemStreaming, _> = serde_json::from_str(&enum_data);
+                                    return Poll::Ready(Some(data.map_err(|e| e.into())))
+                                },
+                                "thread.run.requires_action" => {
+                                    let enum_data = format!("{{\"run\": {}}}", data);
+                                    let data: Result<ItemStreaming, _> = serde_json::from_str(&enum_data);
+                                    return Poll::Ready(Some(data.map_err(|e| e.into())))
+                                },
                                 _ => {
                                     let enum_data = "{\"text_created\": {\"annotations\": [], \"value\": \"\"}}";
                                     let data: Result<ItemStreaming, _> = serde_json::from_str(&enum_data);
@@ -164,3 +174,5 @@ APIFuture<Req, ItemNonStreaming, ItemStreaming>
         })
     }
 }
+
+
