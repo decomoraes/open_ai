@@ -362,6 +362,40 @@ impl Runs {
     //       options,
     //     );
     //   }
+
+    /// Submit the tool outputs from a previous run and stream the run to a terminal
+    /// state. More information on Run lifecycles can be found here:
+    /// https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+    pub fn submit_tool_outputs_stream(
+        &self,
+        thread_id: &str,
+        run_id: &str,
+        body: RunSubmitToolOutputsParams,
+        options: Option<RequestOptions<RunSubmitToolOutputsParams>>,
+    ) ->  APIFuture<RunSubmitToolOutputsParams, (), AssistantStream> {
+        let mut headers: Headers = HashMap::new();
+        headers.insert("OpenAI-Beta".to_string(), Some("assistants=v2".to_string()));
+        // headers.insert("Content-Type".to_string(), Some("text/event-stream".to_string()));
+        // headers.insert("Accept".to_string(), Some("text/event-stream".to_string()));
+        if let Some(opts) = &options {
+            if let Some(hdrs) = &opts.headers {
+                for (key, value) in hdrs {
+                    headers.insert(key.to_owned(), value.to_owned());
+                }
+            }
+        }
+
+        self.client.clone().unwrap().lock().unwrap().post(
+            &format!("/threads/{thread_id}/runs/{run_id}/submit_tool_outputs"),
+            Some(RequestOptions {
+                body: Some(body),
+                headers: Some(headers),
+                stream: Some(true),
+                ..options.unwrap_or_default()
+            }),
+        )
+    }
+
 }
 
 /// Tool call objects

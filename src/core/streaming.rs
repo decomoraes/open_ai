@@ -110,7 +110,7 @@ APIFuture<Req, ItemNonStreaming, ItemStreaming>
 {
     pub fn into_stream(self) -> impl Stream<Item=Result<ItemStreaming, Box<dyn Error>>> + 'a {
         let request_builder = self.request.unwrap();
-        let is_thread_run = self.request_options.path.starts_with("/threads/") && self.request_options.path.ends_with("/runs");
+        let is_thread_run = self.request_options.path.starts_with("/threads/") && self.request_options.path.contains("/runs");
 
         let mut event_source = EventSource::new(request_builder).expect("Failed to create EventSource");
 
@@ -124,7 +124,7 @@ APIFuture<Req, ItemNonStreaming, ItemStreaming>
                     Some(Ok(Event::Message(message))) => {
                         if is_thread_run {
 
-                            let mut data = message.data.clone();
+                            let data = message.data.clone();
 
                             // check if ItemStreaming is AssistantStream
                             // println!("thread event: {:#?}", message);

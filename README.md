@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-open_ai = "0.1.3"
+open_ai = "0.1.4"
 ```
 
 ## Usage
@@ -108,4 +108,4 @@ if run.status == RunStatus::Completed {
 }
 ```
 
-By integrating these features, the Crab AI library provides a robust interface for utilizing the latest capabilities of the OpenAI API, including the Assistant API currently in beta.
+By integrating these features, the open_ai library provides a robust interface for utilizing the latest capabilities of the OpenAI API, including the Assistant API currently in beta.

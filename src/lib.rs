@@ -325,7 +325,10 @@ mod tests {
     use crate::resources::beta::assistants;
     use crate::resources::beta::threads::messages::{message, message_create_params};
     use crate::resources::beta::threads::runs::runs::RunStatus;
-    use crate::resources::beta::threads::{Message, MessageContentDelta, MessageCreateParams, MessageListParams, messages, RunCreateParams, ThreadCreateParams};
+    use crate::resources::beta::threads::{Message, MessageContentDelta, MessageCreateParams, MessageListParams, messages, RunCreateParams, RunSubmitToolOutputsParams, ThreadCreateParams};
+    use crate::resources::beta::threads::runs::runs::run_submit_tool_outputs_params::ToolOutput;
+    use crate::resources::beta::threads::runs::steps::run_step_delta::StepDetails::ToolCalls;
+    use crate::resources::beta::threads::runs::steps::ToolCallDelta;
     use crate::resources::chat::ChatCompletionContent::Text;
     use crate::resources::chat::ChatCompletionContentPart::Image;
     use crate::resources::chat::ChatModel;
@@ -790,6 +793,154 @@ mod tests {
             }
         }
         
+        // if run.status == RunStatus::Completed {
+        //     let messages = openai.beta.threads.messages.list(
+        //         &run.thread_id,
+        //         None,
+        //         None,
+        //     ).await?;
+        //
+        //     for message in messages.data.iter().rev() {
+        //         match &message.content.first().unwrap() {
+        //             messages::MessageContent::Text { text } => {
+        //                 println!("{:?} > {:?}", message.role, text.value);
+        //             }
+        //             _ => {}
+        //         }
+        //     }
+        // } else {
+        //     println!("{:?}", run.status);
+        //     panic!("Run not completed");
+        // }
+
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_thread_and_create_message_and_create_run_with_stream_and_function() -> Result<(), Box<dyn Error>> {
+        let assistant_id = env::var("ASSISTANT_ID").ok().expect("ASSISTANT_ID is not set");
+
+        let openai = OpenAI::new(ClientOptions::default())?;
+
+        let thread = openai.beta.threads.create(ThreadCreateParams::default()).await?;
+
+        println!("{:?}", thread);
+
+        let message = openai.beta.threads.messages.create(
+            &thread.id,
+            MessageCreateParams {
+                role: message_create_params::Role::User,
+                // content: message_create_params::Content::Text("I need to solve the equation `3x + 11 = 14`. Can you help me?".to_string()),
+                content: message_create_params::Content::Text("What vehicles I have?".to_string()),
+                ..Default::default()
+            },
+            None,
+        ).await?;
+
+        println!("{:?}", message);
+
+        let mut run = openai.beta.threads.runs.stream(
+            &thread.id,
+            RunCreateParams {
+                assistant_id: assistant_id.to_string(),
+                additional_instructions: Some("Please address the user as Jane Doe. The user has a premium account.".to_string()),
+                stream: Some(true),
+                ..Default::default()
+            },
+            None
+        ).into_stream();
+
+        while let Some(event) = run.next().await {
+            match event {
+                Ok(AssistantStream::MessageDelta(message)) => {
+                    message.delta.content.iter().for_each(|content| {
+                        for delta in content.iter() {
+                            match delta {
+                                MessageContentDelta::TextDeltaBlock( text) => {
+                                    if let Some(text) = text.text.as_ref() {
+                                        if let Some(text) = text.value.as_ref() {
+                                            print!("{}", text);
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    });
+                    // message.content.iter().for_each(|content| {
+                    //     for delta in content.iter() {
+                    //         match delta {
+                    //             MessageContentDelta::TextDeltaBlock( text) => {
+                    //                 println!("{:?} > {:?}", message.role, text.text);
+                    //             }
+                    //             _ => {}
+                    //         }
+                    //     }
+                    // });
+                    // println!("chunk: {:?}", message);
+
+                    // let first = t.choices.first();
+                    // if  first.is_none() {
+                    //     continue;
+                    // }
+                    // let text = first.unwrap().delta.content.as_ref().clone().to_owned();
+                    // if let Some(text) = text {
+                    //     print!("{}", text);
+                    // }
+                },
+                Ok(AssistantStream::ToolCallDelta(tool_call)) => {
+                    println!("tool_call: {:?}", tool_call);
+                }
+                Ok(AssistantStream::Run(message)) => {
+                    println!("run: {:?}", message);
+                    let tool_call_id: String = if let Some(first) = message.required_action.unwrap_or_default().submit_tool_outputs.tool_calls.first() {
+                        first.id.clone()
+                    } else { "".to_string() };
+
+                    let tool_outputs = RunSubmitToolOutputsParams {
+                        tool_outputs: vec![ToolOutput{ output: Some("Fusquinha".to_string()), tool_call_id: Some(tool_call_id) }],
+                        stream: Some(true),
+                    };
+
+                    // Use the submitToolOutputsStream helper
+                    let mut stream = openai.beta.threads.runs.submit_tool_outputs_stream(
+                        &thread.id,
+                        &message.id,
+                        tool_outputs,
+                        None,
+                    ).into_stream();
+
+                    while let Some(evt) = stream.next().await {
+                        match evt {
+                            Ok(AssistantStream::MessageDelta(message)) => {
+                                message.delta.content.iter().for_each(|content| {
+                                    for delta in content.iter() {
+                                        match delta {
+                                            MessageContentDelta::TextDeltaBlock(text) => {
+                                                if let Some(text) = text.text.as_ref() {
+                                                    if let Some(text) = text.value.as_ref() {
+                                                        print!("{}", text);
+                                                    }
+                                                }
+                                            }
+                                            _ => continue,
+                                        }
+                                    }
+                                });
+                            }
+                            _ => continue,
+                        }
+                    }
+                },
+                Err(_) => {
+                    println!("Error: {:?}", event);
+                    break;
+                },
+                _ => {continue}
+            }
+        }
+
         // if run.status == RunStatus::Completed {
         //     let messages = openai.beta.threads.messages.list(
         //         &run.thread_id,
